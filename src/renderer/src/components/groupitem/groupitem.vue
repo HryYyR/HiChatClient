@@ -13,7 +13,7 @@
                 {{ props.item.MessageList.length != 0 ?
                     props.item.MessageList.at(-1)?.MsgType == 1 ?
                         `${props.item.MessageList.at(-1)?.UserName}: ${props.item.MessageList.at(-1)?.Msg}` :
-                        props.item.MessageList.at(-1)?.Msg :
+                        props.item.MessageList.at(-1)?.MsgType == 2?`${props.item.MessageList.at(-1)?.UserName}:[文件]`:props.item.MessageList.at(-1)?.Msg :
                     ''
                 }}
             </p>

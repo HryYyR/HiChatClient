@@ -1,27 +1,7 @@
 <template>
     <div class="container" v-loading="data.loginloading" v-show="!data.islogin">
         <!-- 登录 -->
-        <div class="view_container login_container" :style="{ marginTop: data.logindata.offset ? '-500px' : '0px' }">
-            <div class="headericon">
-                <el-icon size="30" color="white">
-                    <Plus />
-                </el-icon>
-            </div>
-            <el-input class="view_input" v-model="data.logindata.username" placeholder="账号" size="large"
-                clearable></el-input>
-            <el-input type="password" class="view_input" v-model="data.logindata.password" show-password placeholder="密码"
-                size="large" clearable></el-input>
-            <div class="option">
-                <div class="option_item">
-                    <span>记住密码: <el-switch size="small" v-model="data.logindata.rememberpassword" />
-                    </span>
-                </div>
-                <div class="option_item">
-                    <span>自动登录: <el-switch size="small" v-model="data.logindata.autologin" /></span>
-                </div>
-            </div>
-            <div class="btn" @click="login">登录</div>
-        </div>
+        <LoginVue :logindata="data.logindata" @login="login" />
 
         <!-- 注册 -->
         <div class="view_container register_container">
@@ -56,7 +36,7 @@
     </div>
 
     <!-- 主面板 -->
-    <div v-show="data.islogin" class="index">
+    <div v-show="data.islogin" class="index" v-loading="data.wsconnecting">
         <div class="left_list">
             <UserInfoVue :username="data.userdata.UserName" :userheader="data.userdata.Avatar" />
 
@@ -112,18 +92,14 @@
         <div class="right_list" v-if="JSON.stringify(data.currentgroupdata) != '{}'">
             <div class="rightlist_option">
                 {{ data.currentgroupdata.GroupInfo.GroupName || "" }} ({{ data.currentgroupdata.GroupInfo.MemberCount }})
-                {{ data.currentgroupdata.MessageList.length }}
             </div>
 
             <!-- 消息列表 -->
             <div class="rightlist_container" ref="msglist">
-                <MessageItemVue
-                v-for="item in data.currentgroupdata.MessageList" :key="item.ID"
-                :item="item"
-                :userdata="data.userdata"
-                :currentgroupdata="data.currentgroupdata"
-                @openMsgHandleMenu="openMsgHandleMenu"
-                />
+                <MessageItemVue v-for="(item, index) in data.currentgroupdata.MessageList" :key="item.ID" :item="item"
+                    :preitem="(index != 0 && data.currentgroupdata.MessageList.length > 1) ? data.currentgroupdata.MessageList[index - 1] : data.currentgroupdata.MessageList[index]"
+                    :userdata="data.userdata" :currentgroupdata="data.currentgroupdata"
+                    @openMsgHandleMenu="openMsgHandleMenu" />
 
                 <!-- 消息未读 -->
                 <div class="message_unread" @click="scrolltonew(0, true)" v-show="data.messageunreaddata.unreadnumber != 0">
@@ -139,9 +115,17 @@
             <div class="rightlist_input">
                 <div class="input_tool">
 
-                    <el-icon class="tool_image" @click="sendimage">
-                        <Picture />
-                    </el-icon>
+                    <el-upload ref="uploadimg" method="POST" :headers="{ 'authorization': Store.token }"
+                        :action="`http://${fileurl}/uploadfile`" :limit="10" :before-upload="beforeUploadImg"
+                        :on-success="onSuccessUploadImg" :on-error="onErrorUploadImg" :auto-upload="true"
+                        :show-file-list="false" multiple>
+                        <template #trigger>
+
+                            <el-icon class="tool_image" @click="sendimage">
+                                <Picture />
+                            </el-icon>
+                        </template>
+                    </el-upload>
 
                 </div>
                 <textarea cols="30" rows="10" v-model="data.input"></textarea>
@@ -153,31 +137,12 @@
 
 
         <!-- 申请加入群聊对话框 -->
-        <el-dialog :before-close="beforeCloseAddGroupEvent" v-model="data.addgroupdata.addGroupDialogVisible" title="添加群聊"
-            width="40%">
-            <div style="display: flex;">
-                <el-input style="margin-right: 3px;" v-model="data.addgroupdata.addgroupinput" placeholder="支持模糊搜索"
-                    size="default" clearable @change=""></el-input>
-                <el-button type="primary" size="default" @click="searchgroup">搜索</el-button>
-            </div>
-            <div>
-                <div v-for="item in data.addgroupdata.addgroupsearchlist" :key="item.ID"
-                    class="apply_join_geoup_dialog_grouplist_item">
-                    <img :src="`http://${fileurl}/${item.Avatar}`" alt="">
-                    <p>{{ item.GroupName }}</p>
-                    <p class="group_number"><el-icon>
-                            <User />
-                        </el-icon>{{ item.MemberCount }}</p>
-                    <el-button type="primary" size="default" @click="preapplyentergroup(item)">申请</el-button>
-
-                </div>
-
-            </div>
-        </el-dialog>
+        <ApplyJoinGroupDialog :addgroupdata="data.addgroupdata" @preapplyentergroup="preapplyentergroup"
+            @searchgroup="searchgroup" @beforeCloseAddGroupEvent="beforeCloseAddGroupEvent" />
 
         <!-- 填写申请加入群聊理由对话框 -->
-        <el-dialog :before-close="beforeCloseAddGroupEvent" v-model="data.addgroupdata.preaddGroupDialogVisible"
-            title="申请理由" width="40%">
+        <el-dialog :close="beforeCloseAddGroupEvent" v-model="data.addgroupdata.preaddGroupDialogVisible" title="申请理由"
+            width="40%">
             <el-input placeholder="申请理由" v-model="data.applyjoingroupdata.Msg" type="textarea" />
             <template #footer>
                 <span class="dialog-footer">
@@ -206,48 +171,28 @@
         </el-dialog>
 
         <!-- 消息通知对话框 -->
-        <el-dialog style="background-color: rgb(229,229,229);" v-model="data.applymsgdata.applyMsgDialogVisible"
-            title="消息通知" width="60%">
-
-            <div class="apply_msg_list_dialog">
-                <div v-for="item in data.userdata.ApplyList" :key="item.ID">
-                    <p>
-                    <p style="display: flex;">
-                        <span> {{ item.ApplyUserName }} </span>
-                    <p style="margin: 0 5px;">申请加入群聊</p> <span> {{ data.grouplist.filter(i => i.GroupInfo.ID ==
-                        item.GroupID)[0].GroupInfo.GroupName
-                    }}</span>
-                    <p style="font-size: 0.8rem;line-height: 1.2rem;margin-left: 10px;color: rgb(168, 168, 168);">{{
-                        item.CreatedAt.slice(11, 19) }}</p>
-                    </p>
-                    <p>
-                        留言:{{ item.ApplyMsg }}
-                    </p>
-                    </p>
-                    <div v-show="item.HandleStatus == 0">
-                        <el-button type="primary" size="default" @click="handleapplymsg(item, 1)">同意</el-button>
-                        <el-button type="danger" size="default" @click="handleapplymsg(item, -1)">拒绝</el-button>
-                    </div>
-                    <div v-show="item.HandleStatus == 1">已同意</div>
-                    <div v-show="item.HandleStatus == -1">已拒绝</div>
-                </div>
-            </div>
-        </el-dialog>
+        <MessageNoticeDialog :userdata="data.userdata" :grouplist="data.grouplist" :applymsgdata="data.applymsgdata"
+            @handleapplymsg="handleapplymsg" />
 
     </div>
 </template>
 
 <script setup lang="ts">
 // const { ipcRenderer } = require('electron')
-import {url,fileurl} from './main'
+import { url, fileurl } from './main'
 import { onMounted, reactive, ref, watch } from 'vue';
 import useCounter from './store/common'
-import { ElMessage, UploadProps } from 'element-plus';
+import { ElMessage, UploadFile, UploadFiles, UploadProps, UploadRawFile } from 'element-plus';
+
+import LoginVue from './components/login/login.vue'
+
 import UserInfoVue from './components/userinfo/userinfo.vue'
 import GroupItemVue from './components/groupitem/groupitem.vue'
 import MessageItemVue from './components/messageitem/message_item.vue'
+
 import CreateGroupDialog from './components/creategroupdialog/create_group_dialog.vue'
-// import { GroupList,Group,GroupInfo,GroupinfoList,Userdata } from './models/models';
+import MessageNoticeDialog from './components/messagenoticedialog/message_notice_dialog.vue'
+import ApplyJoinGroupDialog from './components/applyjoingroupdialog/apply_join_group_dialog.vue'
 import {
     loginapi,
     registerapi,
@@ -263,7 +208,10 @@ import ContextMenu from '@imengyu/vue3-context-menu'
 
 const win: any = window
 let Store = useCounter()
+
 const msglist: any = ref(null)
+const uploadimg: any = ref(null)
+let reconnectnum = 0
 
 onMounted(() => {
     win.api.settitle()
@@ -308,6 +256,7 @@ const data = reactive({
     input: "hello!",  //聊天输入框
     searchgroupinput: "", //搜索群输入框
     loginloading: false, //是否加载中
+    wsconnecting: true,
     addgroupdata: {
         addgroupinput: "",   //添加群输入框
         addgroupsearchlist: <GroupinfoList>[], //添加群搜索列表
@@ -348,6 +297,7 @@ watch(data.logindata, (newValue, _) => {
 
 // 发送消息
 const send = () => {
+    if (data.input.length == 0) return
     let message = {
         UserID: data.userdata.ID,
         UserName: data.userdata.UserName,
@@ -418,37 +368,14 @@ const login = () => {
             localStorage.removeItem("password")
         }
 
-        // 连接ws
-        data.ws.wsconn = new WebSocket(`ws://${url}/ws?token=${localStorage.getItem("token")}`),
-
-            data.ws.wsconn.onopen = function () {
-                // console.log(evt);
-                console.log("connect success!");
-            }
-
-        data.ws.wsconn.onclose = function () {
-            // console.log(evt);
-            console.log("connect close!");
-        }
-        // 接收消息
-        data.ws.wsconn.onmessage = function (evt: any) {
-            var msgstr = evt.data.split('\n');
-            let msg = JSON.parse(msgstr)
-            console.log("收到消息:", msg);
-            handleMsg(msg)
-        }
-
-        data.ws.wsconn.onerror = function (evt: any) {
-            console.log(evt);
-        }
+        connectws()
+        // 设置显示
 
         setTimeout(() => {
             data.loginloading = false
             win.api.changWindowSize()
             data.islogin = true
         }, 1000);
-
-        // 设置显示
 
     }).catch((err) => {
         console.log(err);
@@ -465,11 +392,14 @@ const login = () => {
 const handleMsg = (msg: any) => {
 
     const DefaultMsg = () => {
-        data.grouplist.forEach((group) => {
+        data.grouplist.forEach((group, index) => {
             // console.log(group.GroupInfo.ID, msg.GroupID);
             if (group.GroupInfo.ID == msg.GroupID) {
                 if (group.MessageList == null) { group.MessageList = [] }
                 group.MessageList.push(msg)
+                let temp = data.grouplist[index]
+                data.grouplist[index] = data.grouplist[0]
+                data.grouplist[0] = temp
             }
         })
     }
@@ -496,6 +426,7 @@ const handleMsg = (msg: any) => {
 
     const typelist = {
         1: DefaultMsg,
+        2: DefaultMsg,
         200: refreshGroupMsg,
         201: QuitGroupMsg,
         202: JoginGroupMsg
@@ -667,10 +598,9 @@ const searchgroup = () => {
 }
 
 // 关闭添加群聊对话框之前
-const beforeCloseAddGroupEvent = (done: any) => {
+const beforeCloseAddGroupEvent = () => {
     data.addgroupdata.addgroupsearchlist = <GroupinfoList>{}
     data.addgroupdata.addgroupinput = ""
-    done()
 }
 
 // 填写添加群聊理由前(绑定当前选择数据)
@@ -864,6 +794,7 @@ const scrolltonew = (delay: number = 0, smooth: boolean = false) => {
     }, delay);
 }
 
+// 清除当前消息
 const clearcurrentmsg = () => {
     let message = {
         UserID: data.userdata.ID,
@@ -874,6 +805,82 @@ const clearcurrentmsg = () => {
     }
     data.ws.wsconn.send(JSON.stringify(message))
 }
+
+// 上传图片之前
+const beforeUploadImg = (rawFile: UploadRawFile) => {
+    console.log(rawFile);
+}
+// 上传图片成功
+const onSuccessUploadImg = (response: any, uploadFile: any) => {
+    console.log(response, uploadFile);
+    uploadimg.value.clearFiles(["success"])
+    let message = {
+        UserID: data.userdata.ID,
+        UserName: data.userdata.UserName,
+        UserAvatar: data.userdata.Avatar == "" ? `http://${fileurl}/static/icon.png` : data.userdata.Avatar,
+        GroupID: data.currentgroupdata.GroupInfo.ID,
+        Msg: uploadFile.response.fileurl,
+        MsgType: 2,
+        IsReply: false,
+        ReplyUserID: 0,
+        Context: [],
+        CreatedAt: new Date()
+    }
+    data.ws.wsconn.send(JSON.stringify(message))
+    scrolltonew(400, true)
+}
+// 上传图片失败
+const onErrorUploadImg = (response: any, uploadFile: UploadFile, uploadFiles: UploadFiles) => {
+    console.log(response, uploadFile, uploadFiles);
+    uploadimg.value.clearFiles(["success"])
+    tip('error', "发送失败!")
+}
+
+// 连接ws
+const connectws = () => {
+    // 连接ws
+    data.ws.wsconn = new WebSocket(`ws://${url}/ws?token=${localStorage.getItem("token")}`),
+
+        data.ws.wsconn.onopen = function () {
+            console.log("connect success!");
+            data.wsconnecting = false
+            reconnectnum = 0
+        }
+    data.ws.wsconn.onclose = function (evt: any) {
+        data.wsconnecting = true
+        // console.log(evt);
+        console.log("connect close!");
+
+        if (evt.code == 1005) return
+        tip('error', "网络连接超时,尝试重连中...")
+        if (reconnectnum >= 3) {
+            outlogin()
+            tip('error', "网络连接失败,请检查网络后重试!")
+            data.wsconnecting = false
+            reconnectnum = 0
+            return
+        }
+        setTimeout(() => {
+            console.log("尝试重连1...");
+            reconnectnum++
+            connectws()
+        }, 3000);
+    }
+    // 接收消息 
+    data.ws.wsconn.onmessage = function (evt: any) {
+        var msgstr = evt.data.split('\n');
+        let msg = JSON.parse(msgstr)
+        console.log("收到消息:", msg);
+        handleMsg(msg)
+    }
+
+    data.ws.wsconn.onerror = function (evt: any) {
+        console.log(evt);
+    }
+
+
+}
+
 
 export type Userdata = {
     ID: number
