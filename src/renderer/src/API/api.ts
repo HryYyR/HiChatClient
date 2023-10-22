@@ -1,7 +1,12 @@
 import axios from 'axios'
 import { Md5 } from 'ts-md5';
 
+// const staticurl = "http://hyyyh.top:3005"
+// const fileurl = "http://hyyyh.top:3006"
+// axios.defaults.baseURL = "http://hyyyh.top:3004"
+
 const staticurl = "http://localhost:3005"
+const fileurl = "http://localhost:3006"
 axios.defaults.baseURL = "http://localhost:3004"
 
 // 登录
@@ -69,17 +74,17 @@ export function searchGroupapi(text: string) {
     return axios.post("/user/searchGroup", msg)
 }
 
-// 加入群聊
-export function joingroupapi(applyid: number,status: number) {
+// 处理加入群聊
+export function joingroupapi(applyid: number, status: number) {
     let msg = {
         ApplyID: applyid,
-        HandleStatus:status
+        HandleStatus: status
     }
-    return axios.post("/user/joingroup", msg)
+    return axios.post("/user/handlejoingroup", msg)
 }
 
+// 申请加入群聊
 export function applyjoingroupapi(applydata: any) {
-
     return axios.post("/user/applyjoingroup", applydata)
 }
 
@@ -100,3 +105,60 @@ export function exitgroupapi(id: number) {
     return axios.post("/user/exitgroup", msg)
 }
 
+// 修改用指定户信息
+export function edituserdataapi(age: number, city: string) {
+    let msg = {
+        age: age,
+        city: city
+    }
+    return axios({
+        url: staticurl + "/user/edituserdata",
+        method: "POST",
+        data: msg
+    })
+}
+
+// 获取用户信息
+export function getuserdataapi(id: number) {
+    let msg = {
+        ID: id
+    }
+    return axios({
+        url: staticurl + "/user/getuserdata",
+        method: "POST",
+        data: msg
+    })
+}
+
+// 申请添加好友
+export function applyadduserapi(PreApplyUserID:number, PreApplyUserName:string, ApplyUserID:number, ApplyUserName:string, ApplyMsg:string) {
+    let msg = {
+        ApplyUserID: ApplyUserID,  //申请人
+        ApplyUserName: ApplyUserName,
+        PreApplyUserID: PreApplyUserID, //被申请人
+        PreApplyUserName: PreApplyUserName,
+        ApplyMsg: ApplyMsg
+    }
+    return axios.post("/user/applyadduser", msg)
+}
+
+// 处理添加好友
+export function adduserapi(applyid: number, status: number) {
+    let msg = {
+        ApplyID: applyid,
+        HandleStatus: status
+    }
+    return axios.post("/user/handleadduser", msg)
+}
+
+// 上传资源
+export function uploadresourceapi(file: FormData) {
+    return axios({
+        url: fileurl + "/uploadfile",
+        method: "POST",
+        data:file,
+        headers:{
+            "Content-Type":"multipart/form-data"
+        }
+    })
+}

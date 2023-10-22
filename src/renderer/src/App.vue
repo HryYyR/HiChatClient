@@ -1,4 +1,6 @@
 <template>
+    <HeaderVue />
+
     <div class="container" v-loading="data.loginloading" v-show="!data.islogin">
         <!-- 登录 -->
         <LoginVue :logindata="data.logindata" @login="login" />
@@ -38,7 +40,8 @@
     <!-- 主面板 -->
     <div v-show="data.islogin" class="index" v-loading="data.wsconnecting">
         <div class="left_list">
-            <UserInfoVue :username="data.userdata.UserName" :userheader="data.userdata.Avatar" />
+            <UserInfoVue @edituserdata="edituserdata" @userdetaildialoghandleClose="userdetaildialoghandleClose"
+                :UserDetailDialogVisible="data.userdetaildata.UserDetailDialogVisible" :userdata="data.userdata" />
 
             <!-- 群工具 -->
             <div class="group_tools">
@@ -49,6 +52,11 @@
                     </el-icon>
                     <template #dropdown>
                         <el-dropdown-menu>
+                            <el-dropdown-item>
+                                <div @click="data.addUserdata.addUserDialogVisible = true">
+                                    添加好友
+                                </div>
+                            </el-dropdown-item>
                             <el-dropdown-item>
                                 <div @click="data.addgroupdata.addGroupDialogVisible = true">
                                     添加群聊
@@ -67,9 +75,14 @@
             <!-- 申请消息列表 -->
             <div class="apply_msg_list" v-if="data.islogin" @click="data.applymsgdata.applyMsgDialogVisible = true">
                 <div class="apply_msg_list_left">
-                    <p>消息通知</p><span v-show="data.userdata.ApplyList.filter(i => i.HandleStatus == 0).length != 0">{{
-                        data.userdata.ApplyList.filter(i => i.HandleStatus == 0).length
-                    }}</span>
+                    <p>消息通知</p>
+                    <span v-show="data.userdata.ApplyList.filter(i => i.HandleStatus == 0).length != 0 ||
+                        data.userdata.ApplyUserList.filter(i => i.HandleStatus == 0).length != 0">
+                        {{
+                            data.userdata.ApplyList.filter(i => i.HandleStatus == 0).length +
+                            data.userdata.ApplyUserList.filter(i => i.HandleStatus == 0).length
+                        }}
+                    </span>
                 </div>
                 <p class="apply_msg_list_right"><el-icon>
                         <ArrowRightBold />
@@ -96,7 +109,8 @@
 
             <!-- 消息列表 -->
             <div class="rightlist_container" ref="msglist">
-                <MessageItemVue v-for="(item, index) in data.currentgroupdata.MessageList" :key="item.ID" :item="item"
+                <MessageItemVue @changeHeaderDialog="changeHeaderDialog"
+                    v-for="(item, index) in data.currentgroupdata.MessageList" :key="item.ID" :item="item"
                     :preitem="(index != 0 && data.currentgroupdata.MessageList.length > 1) ? data.currentgroupdata.MessageList[index - 1] : data.currentgroupdata.MessageList[index]"
                     :userdata="data.userdata" :currentgroupdata="data.currentgroupdata"
                     @openMsgHandleMenu="openMsgHandleMenu" />
@@ -114,22 +128,32 @@
 
             <div class="rightlist_input">
                 <div class="input_tool">
-
                     <el-upload ref="uploadimg" method="POST" :headers="{ 'authorization': Store.token }"
                         :action="`http://${fileurl}/uploadfile`" :limit="10" :before-upload="beforeUploadImg"
                         :on-success="onSuccessUploadImg" :on-error="onErrorUploadImg" :auto-upload="true"
                         :show-file-list="false" multiple>
                         <template #trigger>
-
-                            <el-icon class="tool_image" @click="sendimage">
+                            <el-icon class="tool_item">
                                 <Picture />
                             </el-icon>
                         </template>
                     </el-upload>
-
+                    <div class="tool_item">
+                        <el-icon class="tool_item" :class="{ 'sound_record_active': data.soundrecorddata.visible }"
+                            @click="handlesoundrecord">
+                            <Microphone />
+                        </el-icon>
+                    </div>
                 </div>
-                <textarea cols="30" rows="10" v-model="data.input"></textarea>
-                <div @click="send" class="sendbtn" :style="{ color: data.input ? 'white' : 'rgba(255,255,255,0.4)' }">
+                <textarea v-show="!data.soundrecorddata.visible" cols="30" rows="10" v-model="data.input"></textarea>
+                <div class="tool_sound" v-show="data.soundrecorddata.visible">
+                    <el-icon :class="{ 'sound_record_active': data.soundrecorddata.recordStatus }">
+                        <Microphone />
+                    </el-icon>
+                    <p>按住空格开始录音，松开发送录音</p>
+                </div>
+                <div @click="send" class="sendbtn" :style="{ color: data.input ? 'white' : 'rgba(255,255,255,0.4)' }"
+                    v-show="!data.soundrecorddata.visible">
                     发送
                 </div>
             </div>
@@ -154,7 +178,8 @@
         </el-dialog>
 
         <!-- 创建群聊对话框 -->
-        <CreateGroupDialog :creategroupdata="data.creategroupdata" @changestep="changestep" @creategroup="creategroup"
+        <CreateGroupDialog @closecreategroupdialog="closecreategroupdialog" :creategroupdata="data.creategroupdata"
+            @changestep="changestep" @creategroup="creategroup"
             @uploadcreategroupheaderSuccess="uploadcreategroupheaderSuccess" />
 
         <!-- 确定退出(解散)群聊对话框 -->
@@ -172,7 +197,11 @@
 
         <!-- 消息通知对话框 -->
         <MessageNoticeDialog :userdata="data.userdata" :grouplist="data.grouplist" :applymsgdata="data.applymsgdata"
-            @handleapplymsg="handleapplymsg" />
+            @handleapplymsg="handleapplymsg" @handleapplyaddusermsg="handleapplyaddusermsg" />
+
+        <ApplyAddUserDialog :userdata="data.userdata" @changeHeaderDialog="changeHeaderDialog"
+            :addUserDialogVisible="data.addUserdata.addUserDialogVisible"
+            :targetuserdata="data.addUserdata.targetUserData" />
 
     </div>
 </template>
@@ -182,9 +211,12 @@
 import { url, fileurl } from './main'
 import { onMounted, reactive, ref, watch } from 'vue';
 import useCounter from './store/common'
-import { ElMessage, UploadFile, UploadFiles, UploadProps, UploadRawFile } from 'element-plus';
+import { UploadFile, UploadFiles, UploadProps, UploadRawFile } from 'element-plus';
+import { tip, SendGroupResourceMsg } from './utils/utils'
 
+import HeaderVue from './components/header.vue'
 import LoginVue from './components/login/login.vue'
+
 
 import UserInfoVue from './components/userinfo/userinfo.vue'
 import GroupItemVue from './components/groupitem/groupitem.vue'
@@ -193,6 +225,7 @@ import MessageItemVue from './components/messageitem/message_item.vue'
 import CreateGroupDialog from './components/creategroupdialog/create_group_dialog.vue'
 import MessageNoticeDialog from './components/messagenoticedialog/message_notice_dialog.vue'
 import ApplyJoinGroupDialog from './components/applyjoingroupdialog/apply_join_group_dialog.vue'
+import ApplyAddUserDialog from './components/adduserdialog/add_user_dialog.vue'
 import {
     loginapi,
     registerapi,
@@ -202,7 +235,9 @@ import {
     creategroupapi,
     exitgroupapi,
     emailcodeapi,
-    applyjoingroupapi
+    applyjoingroupapi,
+    adduserapi,
+    uploadresourceapi
 } from './API/api'
 import ContextMenu from '@imengyu/vue3-context-menu'
 
@@ -230,9 +265,12 @@ const data = reactive({
     grouplist: <Group>[],//群信息
     currentgroupdata: <GroupList>{},
     userdata: <Userdata>{},  //用户信息
+    userdetaildata: {
+        UserDetailDialogVisible: true
+    },
     logindata: { //登录信息
-        username: "niko",
-        password: "Hyyyh1527",
+        username: "",
+        password: "",
         rememberpassword: localStorage.getItem("rememberpassword") == "1" ? true : false,
         autologin: localStorage.getItem("autologin") == "1" ? true : false,
         offset: false
@@ -257,6 +295,10 @@ const data = reactive({
     searchgroupinput: "", //搜索群输入框
     loginloading: false, //是否加载中
     wsconnecting: true,
+    addUserdata: {
+        addUserDialogVisible: false,
+        targetUserData: <any>{}
+    },
     addgroupdata: {
         addgroupinput: "",   //添加群输入框
         addgroupsearchlist: <GroupinfoList>[], //添加群搜索列表
@@ -273,15 +315,20 @@ const data = reactive({
     quitgroupdata: {
         quitGroupDialogVisible: false,
         title: "退出群聊",
-        targetgroupdata: <GroupList>{
-
-        }
+        targetgroupdata: <GroupList>{}
     },
     applyjoingroupdata: {
         GroupName: "",
         GroupID: -1,
         Msg: "",
         ApplyWay: 1
+    },
+    soundrecorddata: {
+        data: [] as Array<Blob>,
+        visible: false,
+        recordStatus: false,
+        mediaRecorder: <MediaRecorder>{},
+        targeturl: ""
     },
     applymsgdata: {
         applyMsgDialogVisible: false
@@ -302,6 +349,8 @@ const send = () => {
         UserID: data.userdata.ID,
         UserName: data.userdata.UserName,
         UserAvatar: data.userdata.Avatar == "" ? `http://${fileurl}/static/icon.png` : data.userdata.Avatar,
+        UserCity: data.userdata.City,
+        UserAge: JSON.stringify(data.userdata.Age),
         GroupID: data.currentgroupdata.GroupInfo.ID,
         Msg: data.input,
         MsgType: 1,
@@ -331,7 +380,7 @@ const setcurrentgrouplist = (group: GroupList) => {
     data.currentgroupdata = group
     if (data.currentgroupdata.GroupInfo.UnreadMessage != 0) clearcurrentmsg()
     data.messageunreaddata.unreadnumber = 0 //清空未读
-    scrolltonew()
+    scrolltonew(0)
     setTimeout(() => {
         msglist.value.addEventListener("scroll", setcurrentlistener)
     }, 0);
@@ -427,6 +476,7 @@ const handleMsg = (msg: any) => {
     const typelist = {
         1: DefaultMsg,
         2: DefaultMsg,
+        3: DefaultMsg,
         200: refreshGroupMsg,
         201: QuitGroupMsg,
         202: JoginGroupMsg
@@ -532,7 +582,11 @@ const register = () => {
     })
 }
 
-const sendimage = () => {
+const handlesoundrecord = () => {
+    data.soundrecorddata.visible = !data.soundrecorddata.visible
+}
+
+const sendsoundrecord = () => {
 
 }
 
@@ -556,6 +610,12 @@ const refreshgrouplist = async () => {
         data.grouplist = []
     }
 
+    if (datares.data.applyuserlist == null) {
+        data.userdata.ApplyUserList = []
+    } else {
+        data.userdata.ApplyUserList = datares.data.applyuserlist
+    }
+
     // 解决当有人退出然后重进后,发送消息丢失响应式的bug
     if (JSON.stringify(data.currentgroupdata) != "{}") {
         const currentid = data.currentgroupdata.GroupInfo.ID
@@ -573,13 +633,13 @@ const changestep = (i: number) => {
     i == 0 ? (data.creategroupdata.createstep--) : (data.creategroupdata.createstep++)
 }
 
-// 提示
-function tip(type: any, message: string) {
-    ElMessage({
-        "type": type,
-        "message": message
-    })
-}
+// // 提示
+// function tip(type: any, message: string) {
+//     ElMessage({
+//         "type": type,
+//         "message": message
+//     })
+// }
 
 // 搜索群聊
 const searchgroup = () => {
@@ -671,19 +731,28 @@ const quitgroup = async () => {
     tip("success", GroupInfo.CreaterID == data.userdata.ID ? "解散成功!" : "退出成功!")
 }
 
+// 处理群聊通知
 const handleapplymsg = (apply: ApplyItem, status: number) => {
-
     joingroupapi(apply.ID, status).then(res => {
         console.log(res.data);
         tip("success", res.data.msg)
         apply.HandleStatus = status
-
     }).catch(error => {
         console.log(error);
         tip("error", error)
-
     })
 }
+
+const handleapplyaddusermsg = (apply: ApplyUserItem, status: number) => {
+    apply.HandleStatus = status
+    adduserapi(apply.ID, status).then(res => {
+        tip("success", res.data.msg)
+    }).catch(err => {
+        console.log(err);
+        tip("error", err.response)
+    })
+}
+
 
 // 打开群聊右键菜单
 const openeditgroupmenu = (e: any, item: GroupList) => {
@@ -706,7 +775,7 @@ const openeditgroupmenu = (e: any, item: GroupList) => {
 
 }
 
-// 打开消息右键菜单
+// 打开消息的右键菜单
 const openMsgHandleMenu = (e: any, item: MessageListitem) => {
     if (e.type == "contextmenu") {
         ContextMenu.showContextMenu({
@@ -734,10 +803,61 @@ const openMsgHandleMenu = (e: any, item: MessageListitem) => {
 const initListener = () => {
     window.addEventListener('keydown', (event) => {
         if (event.key == "Enter") {
-            data.input += "\n"
-            return
+            if (event.ctrlKey == true) {
+                data.input += "\n"
+                return
+            } else {
+                send()
+            }
+
+        }
+        if (event.code == "Space" && data.soundrecorddata.visible == true && data.soundrecorddata.recordStatus != true) {
+            data.soundrecorddata.recordStatus = true
+            const constraints = { audio: true };
+            navigator.mediaDevices.getUserMedia(constraints).then(
+                stream => {
+                    console.log("授权成功！");
+                    data.soundrecorddata.mediaRecorder = new MediaRecorder(stream);
+                    data.soundrecorddata.mediaRecorder.start()
+                    data.soundrecorddata.mediaRecorder.ondataavailable = function (e) {
+                        data.soundrecorddata.data.push(e.data);
+                    };
+                    data.soundrecorddata.mediaRecorder.onstop = () => {
+                        var blob = new Blob(data.soundrecorddata.data, { type: "audio/mp3; codecs=opus" });
+                        let file = new File([blob], 'audio.mp3', { type: 'application/octet-stream' });
+
+                        let formData = new FormData();
+                        formData.append('file', file);
+                        uploadresourceapi(formData).then(res => {
+                            let msg = SendGroupResourceMsg(res.data.fileurl,
+                                3,
+                                data.userdata,
+                                data.currentgroupdata.GroupInfo.ID
+                            )
+                            data.ws.wsconn.send(msg)
+                            scrolltonew(500,true)
+                        }).catch(err => {
+                            tip('error', err.response.msg)
+                        })
+                        data.soundrecorddata.data = [];
+                        var audioURL = window.URL.createObjectURL(blob);
+                        data.soundrecorddata.targeturl = audioURL;
+                    };
+                }
+            );
         }
     })
+
+    window.addEventListener('keyup', (event) => {
+        if (data.soundrecorddata.visible == true && event.code == "Space") {
+            console.log("结束录音");
+            data.soundrecorddata.recordStatus = false
+            data.soundrecorddata.mediaRecorder.stop()
+            sendsoundrecord()
+        }
+
+    })
+
 }
 
 // 发送邮箱验证码
@@ -814,20 +934,11 @@ const beforeUploadImg = (rawFile: UploadRawFile) => {
 const onSuccessUploadImg = (response: any, uploadFile: any) => {
     console.log(response, uploadFile);
     uploadimg.value.clearFiles(["success"])
-    let message = {
-        UserID: data.userdata.ID,
-        UserName: data.userdata.UserName,
-        UserAvatar: data.userdata.Avatar == "" ? `http://${fileurl}/static/icon.png` : data.userdata.Avatar,
-        GroupID: data.currentgroupdata.GroupInfo.ID,
-        Msg: uploadFile.response.fileurl,
-        MsgType: 2,
-        IsReply: false,
-        ReplyUserID: 0,
-        Context: [],
-        CreatedAt: new Date()
-    }
-    data.ws.wsconn.send(JSON.stringify(message))
-    scrolltonew(400, true)
+
+    let msg = SendGroupResourceMsg(uploadFile.response.fileurl, 2, data.userdata, data.currentgroupdata.GroupInfo.ID)
+    data.ws.wsconn.send(msg)
+    scrolltonew(500,true)
+
 }
 // 上传图片失败
 const onErrorUploadImg = (response: any, uploadFile: UploadFile, uploadFiles: UploadFiles) => {
@@ -877,10 +988,31 @@ const connectws = () => {
     data.ws.wsconn.onerror = function (evt: any) {
         console.log(evt);
     }
-
-
 }
 
+
+
+
+const userdetaildialoghandleClose = () => {
+    data.userdetaildata.UserDetailDialogVisible = !data.userdetaildata.UserDetailDialogVisible
+}
+
+const edituserdata = (age: number, city: string) => {
+    data.userdata.Age = age
+    data.userdata.City = city
+}
+
+const changeHeaderDialog = (item: Userdata = <Userdata>{}) => {
+    data.addUserdata.targetUserData = item
+    data.addUserdata.addUserDialogVisible = !data.addUserdata.addUserDialogVisible
+}
+
+const closecreategroupdialog = () => {
+    data.creategroupdata.createstep = 1
+    data.creategroupdata.headerurl = ""
+    data.creategroupdata.creategroupinput = ""
+    data.creategroupdata.createGroupDialogVisible = false
+}
 
 export type Userdata = {
     ID: number
@@ -890,8 +1022,25 @@ export type Userdata = {
     CreatedTime: string
     LoginTime: string
     Avatar: string
+    Age: number,
+    City: string,
     GroupList: Array<GroupList>
     ApplyList: Array<ApplyItem>
+    ApplyUserList: Array<ApplyUserItem>
+}
+
+type ApplyUserItem = {
+    ApplyMsg: string
+    ApplyUserID: number
+    ApplyUserName: string
+    ApplyWay: number
+    CreatedAt: string
+    DeletedAt: string
+    HandleStatus: number
+    ID: number
+    PreApplyUserID: number
+    PreApplyUserName: string
+    UpdatedAt: string
 }
 type ApplyItem = {
     ID: number

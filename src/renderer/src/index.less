@@ -8,12 +8,12 @@
 .container {
     overflow: hidden !important;
     height: 498px;
-    width: 360px;
+    width: 400px;
     user-select: none;
 }
 
 .view_container {
-    width: 360px;
+    width: 400px;
     height: 550px;
     display: flex;
     justify-content: start;
@@ -141,6 +141,7 @@
         border-right: 1px solid @borderc;
         display: flex;
         flex-direction: column;
+        -webkit-user-drag: drag;
 
 
         .group_tools {
@@ -266,7 +267,7 @@
             align-items: center;
             font-size: 1.2rem;
             padding: 10px 0 10px 25px;
-            border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+            // border-bottom: 1px solid rgba(0, 0, 0, 0.1);
         }
 
         .message_unread {
@@ -308,13 +309,34 @@
                 padding: 0 10px;
                 margin-top: 5px;
 
-                .tool_image{
+                .tool_item {
                     font-size: 1.5rem;
                     color: #3a3b3c;
-                    & :hover{
+                    margin-right: 10px;
+
+                    & :hover {
                         color: #8795ff;
                     }
+                    
                 }
+
+            }
+       
+            .tool_sound {
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                height: 100%;
+                flex-direction: column;
+
+                i {
+                    font-size: 3rem;
+                }
+
+                p {
+                    font-size: 0.8rem;
+                }
+
             }
 
             textarea {
@@ -345,7 +367,9 @@
         }
     }
 }
-
+.sound_record_active {
+    color: #8795ff !important;
+}
 .outlogin {
     position: fixed;
     z-index: 99;
