@@ -5,8 +5,8 @@
 
         <el-menu class="menu_group" default-active="0" :unique-opened="true" background-color="#e5e5e5" mode="horizontal" :ellipsis="false"
             @select="handleSelect">
-            <el-menu-item class="menuitem" index="0">群聊通知 <span v-show="userdata.ApplyList.filter(i => i.HandleStatus == 0).length != 0" >{{userdata.ApplyList.filter(i=>i.HandleStatus==0).length}}</span></el-menu-item>
-            <el-menu-item class="menuitem" index="1">用户通知 <span  v-show="userdata.ApplyUserList.filter(i => i.HandleStatus == 0).length != 0">{{userdata.ApplyUserList.filter(i=>i.HandleStatus==0).length}}</span></el-menu-item>
+            <el-menu-item class="menuitem" index="0">群聊通知 <span v-show="filterapplyjoingrouplist != 0" >{{filterapplyjoingrouplist}}</span></el-menu-item>
+            <el-menu-item class="menuitem" index="1">用户通知 <span  v-show="filterapplyadduserlist != 0">{{filterapplyadduserlist}}</span></el-menu-item>
         </el-menu>
 
 
@@ -15,8 +15,8 @@
                 <p>
                 <p style="display: flex;">
                     <span> {{ item.ApplyUserName }} </span>
-                <p style="margin: 0 5px;">申请加入群聊</p> <span> {{ props.grouplist.filter(i => i.GroupInfo.ID ==
-                    item.GroupID)[0].GroupInfo.GroupName
+                <p style="margin: 0 5px;">申请加入群聊</p> <span> {{ JSON.stringify(props.grouplist) != '[]'? props.grouplist.filter(i => i.GroupInfo.ID ==
+                    item.GroupID)[0].GroupInfo.GroupName:'群聊不存在'
                 }}</span>
                 <p style="font-size: 0.8rem;line-height: 1.2rem;margin-left: 10px;color: rgb(168, 168, 168);">{{
                     item.CreatedAt.slice(11, 19) }}</p>
@@ -65,7 +65,7 @@
 
 <script setup lang="ts">
 import { reactive } from 'vue';
-import { GroupList } from '../../App.vue'
+import { GroupList } from '../../models/models'
 
 const emit = defineEmits(['handleapplymsg','handleapplyaddusermsg'])
 let props = defineProps({
@@ -80,7 +80,15 @@ let props = defineProps({
     applymsgdata: {
         type: Object,
         required: true,
-    }
+    },
+    filterapplyjoingrouplist: {
+        type: Number,
+        required: true,
+    },
+    filterapplyadduserlist: {
+        type: Number,
+        required: true,
+    },
 })
 
 const data = reactive({

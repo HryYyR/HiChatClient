@@ -58,13 +58,55 @@ export function emailcodeapi(email: string) {
     })
 }
 
-// 刷新列表
+// 刷新获取用户的群聊列表
 export function RefreshGroupListapi(id: number) {
     let userinfo = {
         ID: id
     }
-    return axios.post("/user/RefreshGroupList", userinfo)
+    return axios({
+        url: staticurl + "/user/getusergrouplist",
+        method: "POST",
+        data: userinfo
+    })
 }
+
+// 刷新获取用户的好友列表
+export function RefreshFriendListapi(id: number) {
+    let userinfo = {
+        ID: id
+    }
+    return axios({
+        url: staticurl + "/user/getuserfriendlist",
+        method: "POST",
+        data: userinfo
+    })
+}
+
+// 刷新获取用户的群聊通知列表
+export function RefreshApplyJoinGroupListapi(id: number) {
+    let userinfo = {
+        ID: id
+    }
+    return axios({
+        url: staticurl + "/user/getuserapplyjoingrouplist",
+        method: "POST",
+        data: userinfo
+    })
+}
+
+// 刷新获取用户的好友申请列表
+export function RefreshApplyAddFriendListapi(id: number) {
+    let userinfo = {
+        ID: id
+    }
+    return axios({
+        url: staticurl + "/user/getuserapplyaddfriendlist",
+        method: "POST",
+        data: userinfo
+    })
+}
+
+
 
 // 搜索群聊
 export function searchGroupapi(text: string) {
@@ -105,7 +147,7 @@ export function exitgroupapi(id: number) {
     return axios.post("/user/exitgroup", msg)
 }
 
-// 修改用指定户信息
+// 修改用户信息
 export function edituserdataapi(age: number, city: string) {
     let msg = {
         age: age,

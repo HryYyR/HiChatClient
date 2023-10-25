@@ -7,7 +7,7 @@
             <div class="user_info">
                 <p> {{ targetuserdata.UserName }}</p>
                 <p>
-                    <span v-if="targetuserdata.City.length != 0">{{ targetuserdata.City }}</span>
+                    <span v-if="targetuserdata.City">{{ targetuserdata.City }}</span>
                     <span v-if="targetuserdata.Age != 0">{{ targetuserdata.Age }}岁</span>
                 </p>
             </div>
@@ -55,6 +55,7 @@ watch(props, (_, nv) => {
     data.addUserDialogVisible = nv.addUserDialogVisible
 }, { deep: true })
 const beforeCloseAddUserEvent = () => {
+    data.applycause=""
     emit('changeHeaderDialog', props.targetuserdata)
 }
 

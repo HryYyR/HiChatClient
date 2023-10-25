@@ -203,6 +203,10 @@
             .apply_msg_list_left {
                 display: flex;
 
+                p {
+                    font-size: 0.9rem;
+                }
+
                 span {
                     text-align: center;
                     width: 20px;
@@ -223,33 +227,87 @@
 
         }
 
-        .group_list {
-            overflow: auto;
+        .change_tab {
+            display: flex;
+            flex-direction: row;
+            justify-content: center;
+            align-items: center;
+            height: 60px;
+
+            & div {
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                flex: 1;
+                text-align: center;
+                height: 100%;
+                transition: 0.1s;
+                font-size: 1.1rem;
+            }
+
+            & div:hover {
+                background-color: rgb(229, 229, 229);
+            }
+
+            .checktab {
+                background-color: rgb(229, 229, 229);
+                color: rgb(59, 59, 254);
+            }
+        }
+
+        .list_container {
+            overflow: hidden;
             position: relative;
             height: 100%;
             margin-bottom: 40px;
-            overflow: auto;
 
-            .checkgroup {
-                background-color: rgb(0, 153, 255);
-                color: white !important;
+            .list {
+                overflow: auto;
+                position: absolute;
+                height: 100%;
+                margin-bottom: 40px;
+                width: 32vw;
+                transition: 0.2s;
+            }
 
-                .group_msginfo {
-                    & :nth-child(1) {
-                        color: white;
+            .checkf {
+                right: 0 !important;
+            }
+
+            .checkg {
+                left: 0 !important;
+            }
+
+            .friend_list {
+                right: 100%;
+            }
+
+            .group_list {
+                left: 100%;
+
+                .checkgroup {
+                    background-color: rgb(0, 153, 255);
+                    color: white !important;
+
+                    .group_msginfo {
+                        & :nth-child(1) {
+                            color: white;
+                        }
+
+                        & :nth-child(2) {
+                            background-color: white;
+                            color: black;
+                        }
                     }
 
-                    & :nth-child(2) {
-                        background-color: white;
-                        color: black;
+                    &:hover {
+                        background-color: rgb(0, 153, 255) !important;
                     }
-                }
-
-                &:hover {
-                    background-color: rgb(0, 153, 255) !important;
                 }
             }
         }
+
+
     }
 
     .right_list {
@@ -317,11 +375,11 @@
                     & :hover {
                         color: #8795ff;
                     }
-                    
+
                 }
 
             }
-       
+
             .tool_sound {
                 display: flex;
                 justify-content: center;
@@ -367,9 +425,11 @@
         }
     }
 }
+
 .sound_record_active {
     color: #8795ff !important;
 }
+
 .outlogin {
     position: fixed;
     z-index: 99;

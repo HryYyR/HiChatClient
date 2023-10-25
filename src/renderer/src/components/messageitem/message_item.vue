@@ -121,7 +121,9 @@ const openHeaderHandleMenu = (e, item) => {
                         }).catch(err => {
                             tip('error', err.response.Msg)
                         })
-                    }
+                    },
+                    hidden:props.userdata.FriendList ?props.userdata.FriendList.filter(i=>i.Id == item.UserID).length !=0:false
+                    
                 },
                 {
                     label: "查看资料",
