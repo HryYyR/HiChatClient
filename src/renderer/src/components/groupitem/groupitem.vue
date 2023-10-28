@@ -23,14 +23,14 @@
                     {{ `${props.item.MessageList.at(-1)?.UserName}:[语音]` }}
                 </span>
 
+                <span v-if="props.item.MessageList.at(-1)?.MsgType == 201">
+                    {{ `${props.item.MessageList.at(-1)?.UserName}:退出了群聊` }}
+                </span>
 
-                <!-- {{ props.item.MessageList.length != 0 ?
-                    props.item.MessageList.at(-1)?.MsgType == 1 ?
-                        `${props.item.MessageList.at(-1)?.UserName}: ${props.item.MessageList.at(-1)?.Msg}` :
-                        props.item.MessageList.at(-1)?.MsgType ==
-                            2 ? `${props.item.MessageList.at(-1)?.UserName}:[文件]` : props.item.MessageList.at(-1)?.Msg :
-                    ''
-                }} -->
+                <span v-if="props.item.MessageList.at(-1)?.MsgType == 202">
+                    {{ `${props.item.MessageList.at(-1)?.UserName}:加入了群聊` }}
+                </span>
+
             </p>
         </div>
         <div class="list_msginfo">

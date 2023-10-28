@@ -1,3 +1,4 @@
+
 export type Userdata = {
     ID: number
     NikeName: string
@@ -14,18 +15,7 @@ export type Userdata = {
     FriendList: Array<Friend>
 }
 
-export type Friend = {
-    Age: string
-    Avatar: string
-    City: string
-    CreatedAt: string
-    DeletedAt: string
-    Email: string
-    Id: number
-    NikeName: string
-    UpdatedAt: string
-    UserName: string
-}
+
 
 export type ApplyUserItem = {
     ApplyMsg: string
@@ -75,12 +65,12 @@ export type GroupInfo = {
     ID: number
     UUID: string
     UpdatedAt: string
-} 
+}
 
 export type MessageListitem = {
-    ID: number
+    ID?: number
     Context: any
-    CreatedAt: string
+    CreatedAt: Date
     GroupID: number
     IsReply: boolean
     Msg: string
@@ -88,7 +78,39 @@ export type MessageListitem = {
     ReplyUserID: number
     UserID: number
     UserName: string
-    UserUUID: string
+    UserUUID?: string 
     UserAvatar: string
+    UserAge:string
+    UserCity:string
+}
+
+export type Friend = {
+    Age: string
+    Avatar: string
+    City: string
+    CreatedAt: string
+    DeletedAt: string
+    Email: string
+    Id: number
+    MessageList: Array<FriendMessageListitem>
+    UnreadMessage:number
+    NikeName: string
+    UpdatedAt: string
+    UserName: string
+}
+
+export type FriendMessageListitem = {
+    UserID: number
+    UserName: string
+    UserAvatar: string
+    ReceiveUserID: number
+    ReceiveUserName: string
+    ReceiveUserAvatar: string
+    Msg: string
+    MsgType: number
+    IsReply: boolean
+    ReplyUserID: number
+    Context: any
+    CreatedAt: Date
 }
 

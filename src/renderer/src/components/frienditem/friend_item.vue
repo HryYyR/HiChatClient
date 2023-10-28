@@ -6,26 +6,26 @@
         </div>
         <div>
             <p>{{ props.item.NikeName }}</p>
-            <!-- <p class="list_lastmsg" v-show="props.item.MessageList.length != 0">
-                <span v-if="props.item.MessageList.at(-1)?.MsgType == 1">
+            <p class="list_lastmsg" v-show="props.item.MessageList.length != 0">
+                <span v-if="props.item.MessageList.at(-1)?.MsgType == 1001">
                     {{ `${props.item.MessageList.at(-1)?.UserName}:${props.item.MessageList.at(-1)?.Msg}` }}
                 </span>
 
-                <span v-if="props.item.MessageList.at(-1)?.MsgType == 2">
+                <span v-if="props.item.MessageList.at(-1)?.MsgType == 1002">
                     {{ `${props.item.MessageList.at(-1)?.UserName}:[图片]` }}
                 </span>
 
-                <span v-if="props.item.MessageList.at(-1)?.MsgType == 3">
+                <span v-if="props.item.MessageList.at(-1)?.MsgType == 1003">
                     {{ `${props.item.MessageList.at(-1)?.UserName}:[语音]` }}
                 </span>
 
-            </p> -->
+            </p>
         </div>
         <div class="list_msginfo">
-            <!-- <div>{{ props.item.MessageList.length != 0 ? props.item.MessageList.at(-1)?.CreatedAt.slice(11, 16) : '' }}
+            <div>{{ props.item.MessageList.length != 0 ? props.item.MessageList.at(-1)?.CreatedAt.toString().slice(11, 16) : '' }}
             </div>
-            <div v-show="props.item.GroupInfo.UnreadMessage != 0">{{ props.item.MessageList.length != 0 ?
-                props.item.GroupInfo.UnreadMessage : '' }}</div> -->
+            <div v-show="props.item.UnreadMessage != 0">{{ props.item.MessageList.length != 0 ?
+                props.item.UnreadMessage : '' }}</div>
         </div>
     </div>
 </template>

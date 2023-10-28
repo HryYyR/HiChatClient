@@ -18,12 +18,21 @@ let props = defineProps({
 })
 
 const showttime = computed(() => {
-    if (props.time == props.pretime) {
-        return ""
-    }
+    
+    // if (props.time == props.pretime) {
+    //     // return ""
+    // }
     let date = new Date(props.time)
     let predate = new Date(props.pretime)
-    if (Math.abs(date.getMinutes() - predate.getMinutes())<10){
+
+    if ( 
+        date.getHours() == predate.getHours() &&
+        date.getDay() == predate.getDay() &&
+        date.getMonth() == predate.getMonth() &&
+        date.getFullYear() == predate.getFullYear() &&
+        Math.abs(date.getMinutes() - predate.getMinutes())<5&&
+        props.time != props.pretime
+        ){
         return ""
     }
 

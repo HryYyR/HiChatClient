@@ -121,19 +121,53 @@
 
 
 
-        <div class="right_list" v-if="data.currentSelectType == 2">
-            <div class="rightlist_option">
+        <!-- <div class="right_list">
+
+
+            <div class="rightlist_input">
+                <textarea v-show="!data.soundrecorddata.visible" cols="30" rows="10" v-model="data.input"></textarea>
+
+            </div>
+        </div> -->
+
+
+        <div class="right_list">
+
+            <!-- friend标题栏 -->
+            <div class="rightlist_option"
+                v-if="data.currentSelectType == 2 && JSON.stringify(data.currentfrienddata) != '{}'">
                 {{ data.currentfrienddata.NikeName || "" }}
             </div>
-        </div>
 
+            <!-- friend消息列表 -->
+            <div class="rightlist_container" ref="msglist"
+                v-if="data.currentSelectType == 2 && JSON.stringify(data.currentfrienddata) != '{}'">
+                <UserMessageItemVue v-for="(item, index) in data.currentfrienddata.MessageList" :item="item"
+                    :userdata="data.userdata"
+                    :pretime="(index != 0 && data.currentfrienddata.MessageList.length > 1) ? data.currentfrienddata.MessageList[index - 1] : data.currentfrienddata.MessageList[index]" />
 
-        <div class="right_list" v-if="data.currentSelectType == 1 && JSON.stringify(data.currentgroupdata) != '{}'">
-            <div class="rightlist_option">
-                {{ JSON.stringify(data.currentgroupdata) != '{}'? data.currentgroupdata.GroupInfo.GroupName : "" }} ({{ JSON.stringify(data.currentgroupdata) != '{}'? data.currentgroupdata.GroupInfo.MemberCount:'' }})
+                <div class="message_unread" @click="scrolltonew(0, true)" v-show="data.messageunreaddata.unreadnumber != 0">
+                    <span>
+                        {{ data.messageunreaddata.unreadnumber }}条未读
+                    </span>
+                    <el-icon>
+                        <ArrowDown />
+                    </el-icon>
+                </div>
             </div>
 
-            <div class="rightlist_container" ref="msglist">
+
+
+            <!-- group标题栏 -->
+            <div class="rightlist_option"
+                v-if="data.currentSelectType == 1 && JSON.stringify(data.currentgroupdata) != '{}'">
+                {{ JSON.stringify(data.currentgroupdata) != '{}' ? data.currentgroupdata.GroupInfo.GroupName : "" }} ({{
+                    JSON.stringify(data.currentgroupdata) != '{}' ? data.currentgroupdata.GroupInfo.MemberCount : '' }})
+            </div>
+
+            <!-- group消息列表 -->
+            <div class="rightlist_container" ref="msglist" :style="{ opacity: data.loadingmessagelist ? 0 : 1 }"
+                v-if="data.currentSelectType == 1 && JSON.stringify(data.currentgroupdata) != '{}'">
                 <MessageItemVue @changeHeaderDialog="changeHeaderDialog"
                     v-for="(item, index) in data.currentgroupdata.MessageList" :key="item.ID" :item="item"
                     :preitem="(index != 0 && data.currentgroupdata.MessageList.length > 1) ? data.currentgroupdata.MessageList[index - 1] : data.currentgroupdata.MessageList[index]"
@@ -150,7 +184,9 @@
                 </div>
             </div>
 
-            <div class="rightlist_input">
+
+
+            <div class="rightlist_input" v-if="data.currentSelectType != 0">
                 <div class="input_tool">
                     <el-upload ref="uploadimg" method="POST" :headers="{ 'authorization': Store.token }"
                         :action="`http://${fileurl}/uploadfile`" :limit="10" :before-upload="beforeUploadImg"
@@ -237,7 +273,7 @@ import { url, fileurl } from './main'
 import { toRef, onMounted, reactive, ref, watch, computed } from 'vue';
 import useCounter from './store/common'
 import { UploadFile, UploadFiles, UploadProps, UploadRawFile } from 'element-plus';
-import { tip, SendGroupResourceMsg } from './utils/utils'
+import { tip, SendGroupResourceMsg, SendFriendResourceMsg } from './utils/utils'
 import HeaderVue from './components/header.vue'
 import LoginVue from './components/login/login.vue'
 
@@ -245,7 +281,8 @@ import LoginVue from './components/login/login.vue'
 import UserInfoVue from './components/userinfo/userinfo.vue'
 import GroupItemVue from './components/groupitem/groupitem.vue'
 import FriendItemVue from './components/frienditem/friend_item.vue'
-import MessageItemVue from './components/messageitem/message_item.vue';
+import MessageItemVue from './components/messageitem/message_item.vue'
+import UserMessageItemVue from './components/usermessageitem/user_message_item.vue'
 
 import CreateGroupDialog from './components/creategroupdialog/create_group_dialog.vue'
 import MessageNoticeDialog from './components/messagenoticedialog/message_notice_dialog.vue'
@@ -282,6 +319,7 @@ import {
     GroupinfoList,
     MessageListitem,
     Friend,
+    FriendMessageListitem,
 
 } from './models/models'
 
@@ -315,6 +353,7 @@ const data = reactive({
     wsconnecting: true,
     islogin: false, //是否登录
     loginloading: false, //是否加载中
+    loadingmessagelist: false, //加载消息列表
 
     userdata: <Userdata>{},  //用户信息
     grouplist: <Group>[],//群信息
@@ -400,54 +439,97 @@ const filterapplyadduserlist = computed(() => data.userdata.ApplyUserList ? data
 
 // 发送消息
 const send = () => {
-    if (data.input.length == 0) return
-    let message = {
-        UserID: data.userdata.ID,
-        UserName: data.userdata.UserName,
-        UserAvatar: data.userdata.Avatar == "" ? `http://${fileurl}/static/icon.png` : data.userdata.Avatar,
-        UserCity: data.userdata.City,
-        UserAge: JSON.stringify(data.userdata.Age),
-        GroupID: data.currentgroupdata.GroupInfo.ID,
-        Msg: data.input,
-        MsgType: 1,
-        IsReply: false,
-        ReplyUserID: 0,
-        Context: [],
-        CreatedAt: new Date()
+    if (data.input.replace(/ /g, "").length == 0) return
+    if (data.currentSelectType == 1) {
+        let message: MessageListitem = {
+            UserID: data.userdata.ID,
+            UserName: data.userdata.UserName,
+            UserAvatar: data.userdata.Avatar == "" ? `http://${fileurl}/static/icon.png` : data.userdata.Avatar,
+            UserCity: data.userdata.City,
+            UserAge: JSON.stringify(data.userdata.Age),
+            GroupID: data.currentgroupdata.GroupInfo.ID,
+            Msg: data.input,
+            MsgType: 1,
+            IsReply: false,
+            ReplyUserID: 0,
+            Context: [],
+            CreatedAt: new Date()
+        }
+        data.ws.wsconn.send(JSON.stringify(message))
+        scrolltonew(200, true)
     }
-    data.ws.wsconn.send(JSON.stringify(message))
+    if (data.currentSelectType == 2) {
+        let message: string = SendFriendResourceMsg(data.input, 1001, data.userdata, data.currentfrienddata)
+        // {
+        //     UserID: data.userdata.ID,
+        //     UserName: data.userdata.UserName,
+        //     UserAvatar: data.userdata.Avatar,
+        //     ReceiveUserID: data.currentfrienddata.Id,
+        //     ReceiveUserName: data.currentfrienddata.UserName,
+        //     ReceiveUserAvatar: data.currentfrienddata.Avatar,
+        //     Msg: data.input,
+        //     MsgType: 1001,
+        //     IsReply: false,
+        //     ReplyUserID: 0,
+        //     Context: [],
+        //     CreatedAt: new Date()
+        // }
+        data.ws.wsconn.send(message)
+    }
     data.input = ""
-    scrolltonew(200, true)
-    console.log(msglist);
+    // console.log(msglist);
 
+
+}
+
+const setcurrentlistener = () => {
+    const { scrollHeight, scrollTop, offsetHeight } = msglist.value
+    if (scrollHeight - scrollTop - 3 * 83.6 < offsetHeight
+    ) {
+        data.messageunreaddata.unreadnumber = 0
+    }
 }
 
 // 设置选中群聊对话框,清除未读消息,监听滚动
 const setcurrentgrouplist = (group: GroupList) => {
-    data.currentSelectType = 1
-    const setcurrentlistener = () => {
-        const { scrollHeight, scrollTop, offsetHeight } = msglist.value
-        if (scrollHeight - scrollTop - 3 * 83.6 < offsetHeight
-        ) {
-            data.messageunreaddata.unreadnumber = 0
-        }
-    }
-
+    data.loadingmessagelist = true
     data.currentgroupdata = group
-    if (data.currentgroupdata.GroupInfo.UnreadMessage != 0) clearcurrentmsg()
+    if (data.currentgroupdata.GroupInfo.UnreadMessage != 0) clearcurrentgroupmsg()
     data.messageunreaddata.unreadnumber = 0 //清空未读
     scrolltonew(0)
     setTimeout(() => {
         msglist.value.addEventListener("scroll", setcurrentlistener)
     }, 0);
     group.GroupInfo.UnreadMessage = 0
+
+    data.currentfrienddata = <Friend>{}
+    data.currentSelectType = 1
+    setTimeout(() => {
+        data.loadingmessagelist = false
+    }, 100);
 }
 
 // 设置选中好友对话框,清除未读消息,监听滚动
 const setcurrentfriendlist = (frienddata: Friend) => {
-    data.currentfrienddata = frienddata
+    data.loadingmessagelist = true
 
+    data.currentfrienddata = frienddata
+    if (data.currentfrienddata.UnreadMessage != 0) clearcurrentfriendmsg()
+    // if (data.currentgroupdata.GroupInfo.UnreadMessage != 0) clearcurrentmsg()
+    data.messageunreaddata.unreadnumber = 0 //清空未读
+    frienddata.UnreadMessage = 0 //清空好友未读
+
+    scrolltonew(0)
+    setTimeout(() => {
+        msglist.value.addEventListener("scroll", setcurrentlistener)
+    }, 0);
+
+    data.currentgroupdata = <GroupList>{}
     data.currentSelectType = 2
+
+    setTimeout(() => {
+        data.loadingmessagelist = false
+    }, 150);
 }
 
 // 登录
@@ -553,6 +635,59 @@ const handleMsg = (msg: any) => {
         refreshgrouplistdata()
     }
 
+    const DefaultFriendMsg = (msg: FriendMessageListitem) => {
+
+        data.userdata.FriendList.forEach((friend: Friend, index: number) => {
+            if (friend.Id == msg.UserID || friend.Id == msg.ReceiveUserID) {
+                friend.MessageList.push(msg)
+
+                let temp = data.userdata.FriendList[index]
+                data.userdata.FriendList[index] = data.userdata.FriendList[0]
+                data.userdata.FriendList[0] = temp
+            }
+        })
+
+        // 处理未读和滚动
+        // 自己发的不管
+        if (msg.UserID == data.userdata.ID) {
+            console.log("自己发的");
+
+            scrolltonew(0, true)
+            clearcurrentfriendmsg()
+            return
+        }
+        // 当前选中的好友是否是消息接收者
+        if (data.currentfrienddata.Id == msg.UserID) {
+            console.log("当前选中的好友是消息接收者");
+            clearcurrentfriendmsg()
+
+            const { scrollHeight, scrollTop, offsetHeight } = msglist.value
+            if (scrollTop + offsetHeight + (3 * 83.6) > scrollHeight) {
+                console.log("滚动到最新");
+
+                scrolltonew(0, true)
+            } else {
+                console.log("未读加以");
+                data.messageunreaddata.unreadnumber += 1
+            }
+        } else { //否则,收到一条好友消息,但是未读
+            console.log("当前未选中好友");
+
+            data.userdata.FriendList.forEach(i => {
+                if (i.Id == msg.UserID) {
+                    console.log("收到一条好友消息,但是未读");
+
+                    i.UnreadMessage++
+                }
+            });
+        }
+        // console.log(data.userdata.FriendList);
+        return
+
+
+
+    }
+
     const typelist = {
         1: DefaultMsg,
         2: DefaultMsg,
@@ -564,29 +699,33 @@ const handleMsg = (msg: any) => {
         501: refreshfriendlistdata,
         502: refreshgroupnoticedata,
         503: refreshfriendnoticedata,
+
+        1001: DefaultFriendMsg,
+        1002: DefaultFriendMsg,
+        1003: DefaultFriendMsg,
     }
     const msgtype = msg.MsgType
     typelist[msgtype](msg)
 
-    if (msg.UserID != data.userdata.ID) {
-        if (JSON.stringify(data.currentgroupdata) != "{}") {
-            if (data.currentgroupdata.GroupInfo.ID != msg.GroupID) {
+    if (msg.UserID != data.userdata.ID) { //如果不是自己发的消息
+        if (JSON.stringify(data.currentgroupdata) != "{}") { //当前是否选中了群聊
+            if (data.currentgroupdata.GroupInfo.ID != msg.GroupID) {//并且选中的群聊不是消息的群聊
                 data.grouplist.forEach(group => {
                     if (group.GroupInfo.ID == msg.GroupID) {
-                        group.GroupInfo.UnreadMessage++
+                        group.GroupInfo.UnreadMessage++ //未读加一
                     }
                 })
             } else {
-                clearcurrentmsg()
+                clearcurrentgroupmsg() //清空未读
             }
-        } else {
+        } else { //没选群聊,未读加一
             data.grouplist.forEach(group => {
                 if (group.GroupInfo.ID == msg.GroupID) {
                     group.GroupInfo.UnreadMessage++
+
                 }
             })
         }
-
     }
 
     if (msglist.value == null || JSON.stringify(data.currentgroupdata) == '{}') return
@@ -679,8 +818,6 @@ const refreshgrouplistdata = async () => {
                 }
             })
         }
-
-        console.log(data.userdata);
 
     }).catch(err => {
         tip('error', err.response)
@@ -896,6 +1033,7 @@ const openMsgHandleMenu = (e: any, item: MessageListitem) => {
 const initListener = () => {
     window.addEventListener('keydown', (event) => {
         if (event.key == "Enter") {
+            event.preventDefault()
             if (event.ctrlKey == true) {
                 data.input += "\n"
                 return
@@ -922,15 +1060,17 @@ const initListener = () => {
                         let formData = new FormData();
                         formData.append('file', file);
                         uploadresourceapi(formData).then(res => {
-                            let msg = SendGroupResourceMsg(res.data.fileurl,
-                                3,
-                                data.userdata,
-                                data.currentgroupdata.GroupInfo.ID
-                            )
+                            let msg = {}
+                            if (data.currentSelectType == 1) {
+                                msg = SendGroupResourceMsg(res.data.fileurl, 3, data.userdata, data.currentgroupdata.GroupInfo.ID)
+
+                            } else {
+                                msg = SendFriendResourceMsg(res.data.fileurl, 1003, data.userdata, data.currentfrienddata)
+                            }
                             data.ws.wsconn.send(msg)
                             scrolltonew(500, true)
                         }).catch(err => {
-                            tip('error', err.response.msg)
+                            tip('error', err.response.data.msg)
                         })
                         data.soundrecorddata.data = [];
                         var audioURL = window.URL.createObjectURL(blob);
@@ -1006,8 +1146,8 @@ const scrolltonew = (delay: number = 0, smooth: boolean = false) => {
     }, delay);
 }
 
-// 清除当前消息
-const clearcurrentmsg = () => {
+// 清除当前群聊消息
+const clearcurrentgroupmsg = () => {
     let message = {
         UserID: data.userdata.ID,
         UserName: data.userdata.UserName,
@@ -1018,6 +1158,12 @@ const clearcurrentmsg = () => {
     data.ws.wsconn.send(JSON.stringify(message))
 }
 
+// 清除当前好友消息
+const clearcurrentfriendmsg = () => {
+    let message = SendFriendResourceMsg("", 1401, data.userdata, data.currentfrienddata)
+    data.ws.wsconn.send(message)
+}
+
 // 上传图片之前
 const beforeUploadImg = (rawFile: UploadRawFile) => {
     console.log(rawFile);
@@ -1026,8 +1172,14 @@ const beforeUploadImg = (rawFile: UploadRawFile) => {
 const onSuccessUploadImg = (response: any, uploadFile: any) => {
     console.log(response, uploadFile);
     uploadimg.value.clearFiles(["success"])
+    let msg = ""
+    if (data.currentSelectType == 1) {
+        msg = SendGroupResourceMsg(uploadFile.response.fileurl, 2, data.userdata, data.currentgroupdata.GroupInfo.ID)
 
-    let msg = SendGroupResourceMsg(uploadFile.response.fileurl, 2, data.userdata, data.currentgroupdata.GroupInfo.ID)
+    } else if (data.currentSelectType == 2) {
+        msg = SendFriendResourceMsg(uploadFile.response.fileurl, 1002, data.userdata, data.currentfrienddata)
+
+    }
     data.ws.wsconn.send(msg)
     scrolltonew(500, true)
 
