@@ -1,0 +1,67 @@
+.user_detail_dialog {
+    display: flex;
+    flex-direction: column;
+    img {
+        max-width: 60px;
+        max-height: 60px;
+        border-radius: 60px;
+    }
+
+    .user_detail_dialog_option {
+        display: flex;
+        align-items: center;
+        position: relative;
+        bottom: 40px;
+    }
+
+    .user_detail_dialog_option_name {
+        font-size: 1.2rem;
+        font-weight: 900;
+        color: black;
+    }
+
+    .user_detail_dialog_option_id {
+        position: relative;
+        top: 10px;
+    }
+
+    .user_detail_item {
+        position: relative;
+        left: 10px;
+        margin: 0 0 10px 0;
+        display: flex;
+
+        div {
+            width: 80px;
+            color: gray;
+        }
+
+        p {
+            color: black;
+            font-weight: 600;
+        }
+
+    }
+    .change_tochat{
+        display: flex;
+        justify-content: flex-end;
+        margin-top: 30px;
+        p{
+            cursor: pointer;
+            position: relative;
+            right: 30px;
+            border-radius: 5px;
+            padding: 6px 0;
+            text-align: center;
+            width: 80px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: white;
+            background-color: rgb(135, 140, 235);
+            transition: 0.2s background-color;
+            &:hover{
+                background-color:rgb(159, 164, 250) ;
+            }
+        }
+    }
+}

@@ -9,6 +9,7 @@ export type Userdata = {
     Avatar: string
     Age: number,
     City: string,
+    Introduce : string,
     GroupList: Array<GroupList>
     ApplyList: Array<ApplyItem>
     ApplyUserList: Array<ApplyUserItem>
@@ -33,6 +34,7 @@ export type ApplyUserItem = {
 export type ApplyItem = {
     ID: number
     GroupID: number
+    GroupName: string
     ApplyMsg: string
     ApplyUserID: number
     ApplyUserName: string
@@ -100,6 +102,7 @@ export type Friend = {
 }
 
 export type FriendMessageListitem = {
+    ID?:number
     UserID: number
     UserName: string
     UserAvatar: string

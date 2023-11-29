@@ -1,22 +1,22 @@
 <template>
     <div class="list_item" @click="emit('setcurrentfriendlist',item)"
+    @contextmenu.prevent.stop="openeditfriendmenu($event,item)"
+    :class="{ checkfriend: JSON.stringify(props.item) == '{}' ? false : props.item.Id == props.currentfrienddata.Id }"
     >
         <div class="list_item_header">
             <img :src="`http://${fileurl}/${item.Avatar}`" alt="">
         </div>
         <div>
             <p>{{ props.item.NikeName }}</p>
-            <p class="list_lastmsg" v-show="props.item.MessageList.length != 0">
+            <p class="list_lastmsg" v-if="props.item.MessageList.length != 0">
                 <span v-if="props.item.MessageList.at(-1)?.MsgType == 1001">
-                    {{ `${props.item.MessageList.at(-1)?.UserName}:${props.item.MessageList.at(-1)?.Msg}` }}
+                    {{ `${props.item.MessageList.at(-1)?.Msg}` }}
                 </span>
-
                 <span v-if="props.item.MessageList.at(-1)?.MsgType == 1002">
-                    {{ `${props.item.MessageList.at(-1)?.UserName}:[图片]` }}
+                    [图片]
                 </span>
-
                 <span v-if="props.item.MessageList.at(-1)?.MsgType == 1003">
-                    {{ `${props.item.MessageList.at(-1)?.UserName}:[语音]` }}
+                    [语音]
                 </span>
 
             </p>
@@ -34,6 +34,8 @@
 import { Friend } from '../../models/models'
 import { fileurl } from '../../main'
 import { PropType } from 'vue'
+import { tip } from "../../utils/utils";
+import  ContextMenu from '@imengyu/vue3-context-menu';
 
 const emit =defineEmits(['setcurrentfriendlist'])
 
@@ -41,12 +43,36 @@ const props = defineProps({
     item: {
         type: Object as PropType<Friend>,
         required: true
+    },
+    currentfrienddata:{
+        type: Object as PropType<Friend>,
+        required: true
     }
 })
+
+
+const openeditfriendmenu = (e,item:Friend)=>{
+    if (e.type == "contextmenu") {
+        ContextMenu.showContextMenu({
+            x: e.clientX,
+            y: e.clientY,
+            items: [
+                {
+                    label: "复制账号",
+                    onClick: () => {
+                        navigator.clipboard.writeText(item.Id.toString())
+                        tip("success","复制成功!")
+                    }
+                }
+            ]
+        });
+    }
+}
 
 </script>
 
 <style scoped lang="less">
-@import url('./friend_item.less');
 @import url('../groupitem//groupitem.less');
+
+@import url('./friend_item.less');
 </style>

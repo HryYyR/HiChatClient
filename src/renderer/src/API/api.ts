@@ -1,12 +1,9 @@
 import axios from 'axios'
 import { Md5 } from 'ts-md5';
 
-// const staticurl = "http://hyyyh.top:3005"
-// const fileurl = "http://hyyyh.top:3006"
-// axios.defaults.baseURL = "http://hyyyh.top:3004"
 
-const staticurl = "http://localhost:3005"
-const fileurl = "http://localhost:3006"
+const apifileurl = "http://localhost:3006"
+const apistaticurl = "http://localhost:3005"
 axios.defaults.baseURL = "http://localhost:3004"
 
 // 登录
@@ -19,7 +16,7 @@ export function loginapi(username: string, password: string) {
         password: encryptionpassword
     }
     return axios({
-        url: staticurl + "/login",
+        url: apistaticurl + "/login",
         method: "POST",
         data: info
     })
@@ -39,7 +36,7 @@ export function registerapi(username: string, password: string, email: string, e
     }
 
     return axios({
-        url: staticurl + "/register",
+        url: apistaticurl + "/register",
         method: "POST",
         data: registerinfo
     })
@@ -52,7 +49,7 @@ export function emailcodeapi(email: string) {
     }
 
     return axios({
-        url: staticurl + "/emailcode",
+        url: apistaticurl + "/emailcode",
         method: "POST",
         data: msg
     })
@@ -64,7 +61,7 @@ export function RefreshGroupListapi(id: number) {
         ID: id
     }
     return axios({
-        url: staticurl + "/user/getusergrouplist",
+        url: apistaticurl + "/user/getusergrouplist",
         method: "POST",
         data: userinfo
     })
@@ -76,7 +73,7 @@ export function RefreshFriendListapi(id: number) {
         ID: id
     }
     return axios({
-        url: staticurl + "/user/getuserfriendlist",
+        url: apistaticurl + "/user/getuserfriendlist",
         method: "POST",
         data: userinfo
     })
@@ -88,7 +85,7 @@ export function RefreshApplyJoinGroupListapi(id: number) {
         ID: id
     }
     return axios({
-        url: staticurl + "/user/getuserapplyjoingrouplist",
+        url: apistaticurl + "/user/getuserapplyjoingrouplist",
         method: "POST",
         data: userinfo
     })
@@ -100,7 +97,7 @@ export function RefreshApplyAddFriendListapi(id: number) {
         ID: id
     }
     return axios({
-        url: staticurl + "/user/getuserapplyaddfriendlist",
+        url: apistaticurl + "/user/getuserapplyaddfriendlist",
         method: "POST",
         data: userinfo
     })
@@ -148,13 +145,20 @@ export function exitgroupapi(id: number) {
 }
 
 // 修改用户信息
-export function edituserdataapi(age: number, city: string) {
+export function edituserdataapi(age: number, city: string,introduce:string) {
+    let aage:any
+    if (typeof age === "number") {
+        aage = JSON.stringify(age)
+    }else{
+        aage=age
+    }
     let msg = {
-        age: age,
-        city: city
+        age: aage,
+        city: city,
+        introduce:introduce
     }
     return axios({
-        url: staticurl + "/user/edituserdata",
+        url: apistaticurl + "/user/edituserdata",
         method: "POST",
         data: msg
     })
@@ -166,14 +170,14 @@ export function getuserdataapi(id: number) {
         ID: id
     }
     return axios({
-        url: staticurl + "/user/getuserdata",
+        url: apistaticurl + "/user/getuserdata",
         method: "POST",
         data: msg
     })
 }
 
 // 申请添加好友
-export function applyadduserapi(PreApplyUserID:number, PreApplyUserName:string, ApplyUserID:number, ApplyUserName:string, ApplyMsg:string) {
+export function applyadduserapi(PreApplyUserID: number, PreApplyUserName: string, ApplyUserID: number, ApplyUserName: string, ApplyMsg: string) {
     let msg = {
         ApplyUserID: ApplyUserID,  //申请人
         ApplyUserName: ApplyUserName,
@@ -196,11 +200,35 @@ export function adduserapi(applyid: number, status: number) {
 // 上传资源
 export function uploadresourceapi(file: FormData) {
     return axios({
-        url: fileurl + "/uploadfile",
+        url: apifileurl + "/uploadfile",
         method: "POST",
-        data:file,
-        headers:{
-            "Content-Type":"multipart/form-data"
+        data: file,
+        headers: {
+            "Content-Type": "multipart/form-data"
         }
+    })
+}
+
+
+// 搜索好友
+export function searchfriendapi(str: string) {
+    let msg = {
+        Searchstr: str,
+    }
+    return axios({
+        url: apistaticurl + "/user/searchuser",
+        method: "POST",
+        data: msg,
+    })
+}
+export function getgroupmessagelist(groupid: Number, currentnum: Number) {
+    let msg = {
+        groupid: groupid,
+        currentnum: currentnum
+    }
+    return axios({
+        url: apistaticurl + "/group/getgroupmessagelist",
+        method: "POST",
+        data: msg,
     })
 }

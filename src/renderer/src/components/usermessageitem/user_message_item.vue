@@ -1,7 +1,7 @@
 <template>
     <div class="msg_item"
         :style="{ justifyContent: (item.MsgType == 1001 || item.MsgType == 1002|| item.MsgType==1003) ? item.UserID == props.userdata.ID ? 'flex-end' : 'flex-start' : 'center' }">
-        <MessageTimeVue :time="item.CreatedAt.toString()" :pretime="pretime.CreatedAt" />
+        <MessageTimeVue :time="item.CreatedAt.toString()" :pretime="pretime.CreatedAt"/>
         <!-- 左头像 -->
         <div class="msg_header" 
             v-if="item.UserID != props.userdata.ID && (item.MsgType == 1001 || item.MsgType == 1002|| item.MsgType==1003)">
@@ -31,6 +31,7 @@
         <p 
         v-if="item.MsgType == 1001"
         class="msg_info" 
+        @contextmenu.prevent.stop="openFriendMsgHandleMenu($event, item)"  
         :class="item.UserID == props.userdata.ID ? 'selfinfo' : ''" 
         v-text="item.Msg"></p>
         </pre>
@@ -58,6 +59,7 @@ import MessageTimeVue from '../messageitem/messagetime/message_time.vue'
 import { PropType } from 'vue'
 import { FriendMessageListitem,Userdata } from '../../models/models'
 import {fileurl} from '../../main'
+import ContextMenu from '@imengyu/vue3-context-menu';
 
 const props = defineProps({
     item: {
@@ -74,6 +76,29 @@ const props = defineProps({
 
     },
 })
+
+const openFriendMsgHandleMenu=(e,item)=>{
+    if (e.type == "contextmenu") {
+        ContextMenu.showContextMenu({
+            x: e.clientX,
+            y: e.clientY,
+            items: [
+                {
+                    label: "复制",
+                    onClick: () => {
+                        let text = window.getSelection()?.toString() || ""
+                        if (text.length == 0) {
+                            navigator.clipboard.writeText(item.Msg)
+                        } else {
+                            navigator.clipboard.writeText(text)
+
+                        }
+                    }
+                }
+            ]
+        });
+    }
+}
 
 </script>
 

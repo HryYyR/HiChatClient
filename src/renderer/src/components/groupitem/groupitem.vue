@@ -43,6 +43,8 @@
 </template>
 
 <script setup lang="ts">
+import { PropType } from 'vue';
+import { GroupList } from "../../models/models";
 import { fileurl } from '../../main'
 
 
@@ -54,10 +56,11 @@ let props = defineProps({
         required: true
     },
     currentgroupdata: {
-        type: Object,
+        type: Object as PropType<GroupList> ,
         required: true
 
-    }
+    },
+
 })
 
 

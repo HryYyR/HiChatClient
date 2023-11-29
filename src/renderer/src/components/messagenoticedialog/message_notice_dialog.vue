@@ -14,23 +14,23 @@
             <div v-for="item in props.userdata.ApplyList" :key="item.ID">
                 <p>
                 <p style="display: flex;">
-                    <span> {{ item.ApplyUserName }} </span>
-                <p style="margin: 0 5px;">申请加入群聊</p> <span> {{ JSON.stringify(props.grouplist) != '[]'? props.grouplist.filter(i => i.GroupInfo.ID ==
-                    item.GroupID)[0].GroupInfo.GroupName:'群聊不存在'
-                }}</span>
+                    <span> {{  item.ApplyUserID == userdata.ID ? "你" : item.ApplyUserName }} </span>
+                <p style="margin: 0 5px;">申请加入群聊</p> <span> {{item.GroupName||"群聊不存在"}}</span>
                 <p style="font-size: 0.8rem;line-height: 1.2rem;margin-left: 10px;color: rgb(168, 168, 168);">{{
-                    item.CreatedAt.slice(11, 19) }}</p>
+                    item.CreatedAt.slice(5, 10) }}</p>
                 </p>
                 <p>
                     留言:{{ item.ApplyMsg }}
                 </p>
                 </p>
-                <div v-show="item.HandleStatus == 0">
+                <div v-show="item.HandleStatus == 0 && item.ApplyUserID != userdata.ID">
                     <el-button type="primary" size="default" @click="handleapplymsg(item, 1)">同意</el-button>
                     <el-button type="danger" size="default" @click="handleapplymsg(item, -1)">拒绝</el-button>
                 </div>
                 <div v-show="item.HandleStatus == 1">已同意</div>
                 <div v-show="item.HandleStatus == -1">已拒绝</div>
+                <div v-show="item.HandleStatus == 0 && item.ApplyUserID == userdata.ID">等待验证</div>
+
             </div>
         </div>
 
@@ -43,7 +43,7 @@
                 <p style="margin: 0 5px;">申请添加好友</p> <span v-show="item.PreApplyUserID != userdata.ID"> {{
                     item.PreApplyUserName }}</span>
                 <p style="font-size: 0.8rem;line-height: 1.2rem;margin-left: 10px;color: rgb(168, 168, 168);">{{
-                    item.CreatedAt.slice(11, 19) }}</p>
+                    item.CreatedAt.slice(5, 10) }}</p>
                 </p>
                 <p v-show="item.ApplyUserID != userdata.ID">
                     留言:{{ item.ApplyMsg }}
@@ -64,13 +64,13 @@
 </template>
 
 <script setup lang="ts">
-import { reactive } from 'vue';
-import { GroupList } from '../../models/models'
+import { reactive,PropType } from 'vue';
+import { GroupList,Userdata } from '../../models/models'
 
 const emit = defineEmits(['handleapplymsg','handleapplyaddusermsg'])
 let props = defineProps({
     userdata: {
-        type: Object,
+        type: Object as  PropType<Userdata>,
         required: true,
     },
     grouplist: {

@@ -30,8 +30,8 @@ const showttime = computed(() => {
         date.getDay() == predate.getDay() &&
         date.getMonth() == predate.getMonth() &&
         date.getFullYear() == predate.getFullYear() &&
-        Math.abs(date.getMinutes() - predate.getMinutes())<5&&
-        props.time != props.pretime
+        Math.abs(date.getMinutes() - predate.getMinutes())<5
+        // &&props.time != props.pretime 
         ){
         return ""
     }

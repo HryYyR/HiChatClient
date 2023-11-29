@@ -1,8 +1,10 @@
 import axios from "axios"
 import { ElMessage } from 'element-plus';
+import { wsurl } from "@renderer/main";
 
-// const baseUrl = "http://hyyyh.top:3004"
-const baseUrl = "http://localhost.top:3004"
+
+const baseUrl = `http://${wsurl}`
+// const baseUrl = "http://localhost.top:3004"
 
 const instance = axios.create({
     // baseURL 将自动加在 url`前面，除非 url 是一个绝对 URL。

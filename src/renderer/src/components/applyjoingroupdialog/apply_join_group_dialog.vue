@@ -3,7 +3,7 @@
     <el-dialog @close="beforeCloseAddGroupEvent" v-model="props.addgroupdata.addGroupDialogVisible" title="添加群聊"
         width="40%">
         <div style="display: flex;">
-            <el-input style="margin-right: 3px;" v-model="props.addgroupdata.addgroupinput" placeholder="支持模糊搜索"
+            <el-input style="margin-right: 3px;" v-model="props.addgroupdata.addgroupinput" placeholder="支持名称模糊查询和群号精准查询"
                 size="default" clearable @change=""></el-input>
             <el-button type="primary" size="default" @click="searchgroup">搜索</el-button>
         </div>
@@ -18,6 +18,7 @@
                 <el-button type="primary" size="default" @click="preapplyentergroup(item)">申请</el-button>
 
             </div>
+            <p class="nodata_info" v-show="props.addgroupdata.addgroupsearchlist.length == 0">暂无匹配的搜索结果</p>
 
         </div>
     </el-dialog>
@@ -36,7 +37,7 @@ let props = defineProps({
 })
 
 const preapplyentergroup = (item) => {
-    emit('preapplyentergroup',item)
+    emit('preapplyentergroup', item)
 }
 const searchgroup = () => {
     emit('searchgroup')

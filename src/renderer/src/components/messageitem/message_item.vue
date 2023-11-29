@@ -4,6 +4,7 @@
         <MessageTimeVue :time="item.CreatedAt" :pretime="preitem.CreatedAt" />
         <!-- 左头像 -->
         <div class="msg_header" @contextmenu.prevent.stop="openHeaderHandleMenu($event, item)"
+        @click="emit('lookuserinfo',item)"
             v-if="item.UserID != props.userdata.ID && (item.MsgType == 1 || item.MsgType == 2|| item.MsgType==3)">
             <img :src="`http://${fileurl}/${item.UserAvatar}`" alt="">
         </div>
@@ -58,7 +59,7 @@ import { getuserdataapi } from '../../API/api';
 import { fileurl } from '../../main'
 import MessageTimeVue from './messagetime/message_time.vue'
 import { ElMessage } from 'element-plus';
-const emit = defineEmits(['openMsgHandleMenu', 'changeHeaderDialog'])
+const emit = defineEmits(['openMsgHandleMenu', 'changeHeaderDialog','lookuserinfo'])
 let props = defineProps({
     item: {
         type: Object,
@@ -129,6 +130,7 @@ const openHeaderHandleMenu = (e, item) => {
                     label: "查看资料",
                     onClick: () => {
                         console.log(item);
+                        emit('lookuserinfo',item)
                     }
                 },
             ]

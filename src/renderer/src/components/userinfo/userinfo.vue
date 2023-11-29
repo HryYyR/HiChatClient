@@ -38,6 +38,13 @@
 
                 </el-input>
             </p>
+            <p><el-input v-model="data.introduce" size="default" @change="">
+                <template #prepend>
+                    个人简介:
+                </template>
+
+            </el-input>
+        </p>
             <p><el-input v-model="props.userdata.CreatedTime" size="default" disabled>
                     <template #prepend>
                         注册时间:
@@ -64,14 +71,15 @@
 </template>
 
 <script setup lang="ts">
-import { reactive } from 'vue';
+import { PropType, reactive } from 'vue';
 import {  fileurl } from '../../main'
 import { edituserdataapi } from '../../API/api'
 import { ElMessage } from 'element-plus';
+import { Userdata } from '../../models/models';
 let emit = defineEmits(['userdetaildialoghandleClose','edituserdata'])
 let props = defineProps({
     userdata: {
-        type: Object,
+        type: Object as PropType<Userdata>,
         required: true
     },
 
@@ -84,20 +92,26 @@ let props = defineProps({
 const data = reactive({
     UserDetailDialogVisible: false,
     age: 0,
-    city: ""
+    city: "",
+    introduce:""
 })
 const userdetaildialoghandleClose = () => {
     emit('userdetaildialoghandleClose')
     data.UserDetailDialogVisible = props.UserDetailDialogVisible
     data.city = props.userdata.City
     data.age = props.userdata.Age
+    data.introduce = props.userdata.Introduce
 }
 
 const edituserdata = () => {
     console.log(data.city, data.age);
-    edituserdataapi(data.age, data.city).then(res => {
+    if(data.age==0 || data.age.toString().length >=4 || data.city =="" || data.city.length>20 || data.introduce.length ==0){
+        tip('error',"信息有误,请检查后重试!")
+        return
+    }
+    edituserdataapi(data.age, data.city,data.introduce).then(res => {
         tip('success', res.data.msg)
-        emit('edituserdata',data.age,data.city)
+        emit('edituserdata',data.age,data.city,data.introduce)
     }).catch((err) => {
         tip('error', err.response.data.msg)
     })

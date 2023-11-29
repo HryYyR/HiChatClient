@@ -1,4 +1,4 @@
-import { app, shell, BrowserWindow, ipcMain } from 'electron'
+import { app, shell, BrowserWindow, ipcMain, Tray, Menu } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
@@ -22,8 +22,11 @@ function createWindow(): void {
       sandbox: false,
       nodeIntegration: true,
       devTools: true,
+
     }
   })
+
+  mainWindow.webContents.openDevTools()
 
   function initMainWindow(mainWindow: BrowserWindow) {
     mainWindow.setResizable(true);
@@ -77,10 +80,42 @@ function createWindow(): void {
   })
 
   ipcMain.on('settitle', () => {
+
     mainWindow.setTitle("Hichat")
+
+    const tray = new Tray(icon)
+    tray.setToolTip('HiChat')
+    tray.on('click', () => {
+      mainWindow.show()
+    })
+
+    tray.on('right-click', () => {
+
+      const trayContextMenu = Menu.buildFromTemplate([
+        {
+          label: '打开主面板',
+          click: () => {
+            mainWindow.show()
+          }
+        }
+        ,
+        {
+          label: '退出',
+          click: () => {
+            tray.destroy()
+            mainWindow.close()
+          }
+        }
+      ])
+
+
+      tray.popUpContextMenu(trayContextMenu)
+    })
+
+
   })
 
-  
+
   ipcMain.on('toMin', () => {
     if (mainWindow) {
       mainWindow.minimize()
@@ -88,16 +123,16 @@ function createWindow(): void {
   })
 
   ipcMain.on('toMax', () => {
-    if (!mainWindow.isMaximizable())return
-    if (mainWindow.isMaximized() ) {
+    if (!mainWindow.isMaximizable()) return
+    if (mainWindow.isMaximized()) {
       mainWindow.unmaximize()
-    }else{
-    mainWindow.maximize()
+    } else {
+      mainWindow.maximize()
     }
   })
 
   ipcMain.on('toClose', () => {
-    mainWindow.close()
+    mainWindow.hide()
   })
 
 
