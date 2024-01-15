@@ -1,8 +1,9 @@
 import axios from 'axios'
 import { Md5 } from 'ts-md5';
 
-
-const apifileurl = "http://localhost:3006"
+const defaulturl = "http://localhost"
+const apifileurl = "http://localhost"
+// const apifileurl = "http://localhost:3006"
 const apistaticurl = "http://localhost:3005"
 axios.defaults.baseURL = "http://localhost:3004"
 
@@ -16,7 +17,7 @@ export function loginapi(username: string, password: string) {
         password: encryptionpassword
     }
     return axios({
-        url: apistaticurl + "/login",
+        url: defaulturl + "/login",
         method: "POST",
         data: info
     })
@@ -145,17 +146,17 @@ export function exitgroupapi(id: number) {
 }
 
 // 修改用户信息
-export function edituserdataapi(age: number, city: string,introduce:string) {
-    let aage:any
+export function edituserdataapi(age: number, city: string, introduce: string) {
+    let aage: any
     if (typeof age === "number") {
         aage = JSON.stringify(age)
-    }else{
-        aage=age
+    } else {
+        aage = age
     }
     let msg = {
         age: aage,
         city: city,
-        introduce:introduce
+        introduce: introduce
     }
     return axios({
         url: apistaticurl + "/user/edituserdata",
@@ -200,7 +201,7 @@ export function adduserapi(applyid: number, status: number) {
 // 上传资源
 export function uploadresourceapi(file: FormData) {
     return axios({
-        url: apifileurl + "/uploadfile",
+        url: apifileurl + "/file/uploadfile",
         method: "POST",
         data: file,
         headers: {
@@ -230,5 +231,14 @@ export function getgroupmessagelist(groupid: Number, currentnum: Number) {
         url: apistaticurl + "/group/getgroupmessagelist",
         method: "POST",
         data: msg,
+    })
+}
+
+
+export function getimgorigindataapi(imgurl: string) {
+    return axios({
+        url: apifileurl + "/" + imgurl,
+        method: "get",
+        responseType:'blob'
     })
 }

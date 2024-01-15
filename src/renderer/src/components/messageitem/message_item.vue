@@ -16,13 +16,13 @@
 
         <el-image
         class="msg_info" 
-        :src="`http://${fileurl}/${item.Msg}`"
+        :src="item.Msg.includes('blob')?item.Msg:`http://${fileurl}/${item.Msg}`"
         :zoom-rate="1.1"
         :max-scale="1"
         :min-scale="0.2"
         v-if="item.MsgType == 2"
         :class="item.UserID == props.userdata.ID ? 'selfinfo' : ''" 
-        :preview-src-list="[`http://${fileurl}/${item.Msg}`]"
+        :preview-src-list="[item.Msg.includes('blob')?item.Msg:`http://${fileurl}/${item.Msg}`]"
         fit="cover"
         hide-on-click-modal
         />
@@ -59,10 +59,12 @@ import { getuserdataapi } from '../../API/api';
 import { fileurl } from '../../main'
 import MessageTimeVue from './messagetime/message_time.vue'
 import { ElMessage } from 'element-plus';
+import { PropType } from 'vue';
+import { MessageListitem } from '@renderer/models/models';
 const emit = defineEmits(['openMsgHandleMenu', 'changeHeaderDialog','lookuserinfo'])
 let props = defineProps({
     item: {
-        type: Object,
+        type: Object as PropType<MessageListitem> ,
         required: true,
     },
     preitem: {

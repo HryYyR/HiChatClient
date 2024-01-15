@@ -72,7 +72,7 @@ export type GroupInfo = {
 export type MessageListitem = {
     ID?: number
     Context: any
-    CreatedAt: Date
+    CreatedAt: string
     GroupID: number
     IsReply: boolean
     Msg: string

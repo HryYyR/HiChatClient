@@ -62,9 +62,9 @@ export function SendFriendResourceMsg(
     msg: string,
     MsgType: number,
     userdata: Userdata,
-    currentfrienddata:Friend
+    currentfrienddata: Friend
 ): string {
-    let data:FriendMessageListitem = {
+    let data: FriendMessageListitem = {
         UserID: userdata.ID,
         UserName: userdata.UserName,
         UserAvatar: userdata.Avatar,
@@ -80,4 +80,28 @@ export function SendFriendResourceMsg(
     }
     let strdata = JSON.stringify(data)
     return strdata
+}
+
+export type MatchingItem = {
+    originnumber?: string,
+    avatar:string,
+    name: string,
+    number: string,
+    type:1|2
+}
+
+export function RegSearch(str: string, arr: Array<MatchingItem>): Array<MatchingItem> {
+    const regexPattern = new RegExp(str, 'i')
+    let matchingGroups: Array<MatchingItem> = []
+    if (str.trim() === '') {
+        return matchingGroups
+    }
+    arr.forEach(item => {
+        let replacename = item.name.replace(regexPattern, match => `<span style="color: rgb(122, 134, 229);">${match}</span>`);
+        let replacenumber = item.number.toString().replace(regexPattern, match => `<span style="color: rgb(122, 134, 229);">${match}</span>`);
+        if (item.name != replacename || item.number != replacenumber) {
+            matchingGroups.push({ originnumber:item.number,avatar:item.avatar,name: replacename, number: replacenumber,type:item.type })
+        }
+    });
+    return matchingGroups
 }

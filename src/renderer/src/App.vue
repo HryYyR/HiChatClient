@@ -45,8 +45,8 @@
 
             <!-- 群工具 -->
             <div class="group_tools">
-                <input type="text" v-model="data.searchgroupinput" placeholder="搜索">
-                <el-dropdown trigger="click">
+                <el-input size="large" v-model="data.searchdata.searchinput" placeholder="搜索" clearable></el-input>
+                <el-dropdown trigger="click" v-show="data.searchdata.searchinput.trim().length == 0">
                     <el-icon class="open_addgroup_dialog_btn">
                         <Plus />
                     </el-icon>
@@ -72,8 +72,19 @@
                 </el-dropdown>
             </div>
 
+            <div class="search_result" v-if="data.searchdata.searchinput.trim().length != 0">
+                <p v-for="(item) in data.searchdata.searchResult" :key="item.name" @click="ToSearchTarget(item)">
+                    <img :src="`http://${fileurl}/${item.avatar}`" alt=""><span v-html="item.name"></span>(<span
+                        v-html="item.number"></span>) ({{ item.type==1?'群聊':'好友' }})
+                </p>
+                <p v-show="data.searchdata.searchResult.length == 0">
+                    暂无搜索结果
+                </p>
+            </div>
+
             <!-- 申请消息列表 -->
-            <div class="apply_msg_list" v-if="data.islogin" @click="data.applymsgdata.applyMsgDialogVisible = true">
+            <div class="apply_msg_list" v-show="data.searchdata.searchinput.trim().length == 0" v-if="data.islogin"
+                @click="data.applymsgdata.applyMsgDialogVisible = true">
                 <div class="apply_msg_list_left">
                     <p>消息通知</p>
                     <span v-show="filterapplyjoingrouplist != 0 || filterapplyadduserlist != 0">
@@ -88,7 +99,7 @@
             </div>
 
             <!-- tab切换栏 -->
-            <div class="change_tab">
+            <div class="change_tab" v-show="data.searchdata.searchinput.trim().length == 0">
                 <div @click="data.currentSelectTab = true" :class="{ checktab: data.currentSelectTab }">
 
                     <el-badge :value="allfriendmsgnum" :hidden="allfriendmsgnum == 0" type="primary">
@@ -106,7 +117,7 @@
                 </div>
             </div>
 
-            <div class="list_container">
+            <div class="list_container" v-show="data.searchdata.searchinput.trim().length == 0">
                 <!-- 好友列表 -->
                 <div class="friend_list list" :class="{ checkf: data.currentSelectTab }">
                     <FriendItemVue v-for="(item) in data.userdata.FriendList" :key="item.Id" :item="item"
@@ -137,7 +148,7 @@
             </div>
 
             <!-- friend消息列表 -->
-            <div class="rightlist_container" ref="msglist"
+            <div class="rightlist_container" ref="msglist" :style="{ opacity: data.loadingmessagelist ? 0 : 1 }"
                 v-if="data.currentSelectType == 2 && JSON.stringify(data.currentfrienddata) != '{}'">
                 <UserMessageItemVue v-for="(item, index) in data.currentfrienddata.MessageList" :item="item"
                     :userdata="data.userdata"
@@ -185,7 +196,7 @@
             <div class="rightlist_input" v-if="data.currentSelectType != 0">
                 <div class="input_tool">
                     <el-upload ref="uploadimg" method="POST" :headers="{ 'authorization': Store.token }"
-                        :action="`http://${fileurl}/uploadfile`" :limit="10" :before-upload="beforeUploadImg"
+                        :action="`http://${fileurl}/file/uploadfile`" :limit="10" :before-upload="beforeUploadImg"
                         :on-success="onSuccessUploadImg" :on-error="onErrorUploadImg" :auto-upload="true"
                         :show-file-list="false" multiple>
                         <template #trigger>
@@ -263,8 +274,9 @@
 
         <!-- 查看用户详情对话框 -->
         <UserDetailDialog :UserDetailDialogVisible="data.userinfodata.UserDetailDialogVisible"
-            :userdata="data.userinfodata.userdata" :friendinfodata="data.userinfodata.friendinfodata"  :isfriend="CurrentCheckUserIsFriend"
-            @handlelookuserinfodialog="handlelookuserinfodialog" @setcurrentfriendlist="setcurrentfriendlist" />
+            :userdata="data.userinfodata.userdata" :friendinfodata="data.userinfodata.friendinfodata"
+            :isfriend="CurrentCheckUserIsFriend" @handlelookuserinfodialog="handlelookuserinfodialog"
+            @setcurrentfriendlist="setcurrentfriendlist" />
 
         <!-- 搜索好友对话框 -->
         <SearchFriendDialog :searchinput="data.searchfrienddata.searchinput" :friendlist="data.searchfrienddata.friendlist"
@@ -280,8 +292,8 @@
 import { fileurl, wsurl } from './main'
 import { toRef, onMounted, reactive, ref, watch, computed } from 'vue';
 import useCounter from './store/common'
-import { Message, UploadFile, UploadFiles, UploadProps, UploadRawFile } from 'element-plus';
-import { tip, SendGroupResourceMsg, SendFriendResourceMsg } from './utils/utils'
+import { UploadFile, UploadFiles, UploadProps, UploadRawFile } from 'element-plus';
+import { tip, SendGroupResourceMsg, SendFriendResourceMsg, RegSearch, MatchingItem } from './utils/utils'
 import HeaderVue from './components/header.vue'
 import LoginVue from './components/login/login.vue'
 
@@ -321,7 +333,8 @@ import {
     uploadresourceapi,
 
     searchfriendapi,
-    getgroupmessagelist
+    getgroupmessagelist,
+    getimgorigindataapi
 } from './API/api'
 
 import {
@@ -374,13 +387,15 @@ const data = reactive({
     grouplist: <Group>[],//群信息
 
     input: "hello!",  //聊天输入框
-    searchgroupinput: "", //搜索群输入框
 
     currentgroupdata: <GroupList>{},//当前群聊对话框
     currentfrienddata: <Friend>{},  //当前好友对话框
     currentSelectTab: true, //true:好友  false:群聊
     currentSelectType: <0 | 1 | 2>0,  // 0:未选中   1:群聊   2:好友
-
+    searchdata: {
+        searchinput: "", //搜索群输入框
+        searchResult: [] as Array<MatchingItem>
+    },
     userdetaildata: {  //自己的用户信息
         UserDetailDialogVisible: true
     },
@@ -414,7 +429,7 @@ const data = reactive({
         preaddGroupDialogVisible: false,  //是否展示添加群理由对话框
     },
     creategroupdata: {
-        headeruploadurl: `http://${fileurl}/uploadfile`,
+        headeruploadurl: `http://${fileurl}/file/uploadfile`,
         creategroupinput: "",   //添加群输入框
         createGroupDialogVisible: false,  //是否展示添加群对话框
         headerurl: "",
@@ -444,7 +459,7 @@ const data = reactive({
     userinfodata: { //点击查看别人的用户资料时
         UserDetailDialogVisible: false,
         userdata: <MessageListitem>{},  //该用户的消息数据
-            friendinfodata: <Friend>{}  //如果是好友,为好友数据
+        friendinfodata: <Friend>{}  //如果是好友,为好友数据
     },
     searchfrienddata: {
         searchinput: "",
@@ -461,9 +476,21 @@ watch(data.logindata, (newValue, _) => {
 })
 
 watch(data, (nv) => {
-    if(JSON.stringify(nv.currentfrienddata) == "{}" &&  JSON.stringify(nv.currentgroupdata) == "{}"){
-        data.currentSelectType=0
+    if (JSON.stringify(nv.currentfrienddata) == "{}" && JSON.stringify(nv.currentgroupdata) == "{}") {
+        data.currentSelectType = 0
     }
+})
+
+watch(() => data.searchdata.searchinput, (nv) => {
+    let matchingarr: Array<MatchingItem> = []
+    data.grouplist.forEach(g => {
+        matchingarr.push({ avatar: g.GroupInfo.Avatar, name: g.GroupInfo.GroupName, number: g.GroupInfo.ID.toString(), type: 1 })
+    })
+    data.userdata.FriendList.forEach(f => {
+        matchingarr.push({ avatar: f.Avatar, name: f.UserName, number: f.Id.toString(), type: 2 })
+    })
+    let searcharr = RegSearch(nv.toString(), matchingarr)
+    data.searchdata.searchResult = searcharr
 })
 
 const allgroupmsgnum = computed(() => {
@@ -509,7 +536,7 @@ const send = () => {
             IsReply: false,
             ReplyUserID: 0,
             Context: [],
-            CreatedAt: new Date()
+            CreatedAt: new Date().toISOString()
         }
         data.ws.wsconn.send(JSON.stringify(message))
         scrolltonew(200, true)
@@ -561,18 +588,20 @@ const setcurrentlistener = () => {
 
 // 设置选中群聊对话框,清除未读消息,监听滚动
 const setcurrentgrouplist = (group: GroupList) => {
-    if(data.currentgroupdata?.GroupInfo?.ID == group.GroupInfo.ID){
+    if (data.currentgroupdata?.GroupInfo?.ID == group.GroupInfo.ID) {
         return
     }
     data.loadingmessagelist = true
     data.loadingmsaageburial = true
     data.currentgroupdata = group
-    data.currentSelectTab=false
+    data.currentSelectTab = false
     // console.log(data.currentgroupdata);
 
     if (data.currentgroupdata.GroupInfo.UnreadMessage != 0) clearcurrentgroupmsg()
     data.messageunreaddata.unreadnumber = 0 //清空未读
-    scrolltonew(0)
+    setTimeout(() => {
+        scrolltonew(0)
+    }, 200);
     setTimeout(() => {
         msglist.value.addEventListener("scroll", setcurrentlistener)
     }, 0);
@@ -582,25 +611,27 @@ const setcurrentgrouplist = (group: GroupList) => {
     data.currentSelectType = 1
     setTimeout(() => {
         data.loadingmessagelist = false
-    }, 100);
+    }, 250);
 }
 
 // 设置选中好友对话框,清除未读消息,监听滚动
 const setcurrentfriendlist = (frienddata: Friend) => {
-    if(data.currentfrienddata.Id == frienddata.Id){
+    if (data.currentfrienddata.Id == frienddata.Id) {
         return
     }
     data.loadingmessagelist = true
     data.loadingmsaageburial = true
     data.currentfrienddata = frienddata
-    data.currentSelectTab=true
+    data.currentSelectTab = true
     data.userinfodata.UserDetailDialogVisible = false
     if (data.currentfrienddata.UnreadMessage != 0) clearcurrentfriendmsg()
     // if (data.currentgroupdata.GroupInfo.UnreadMessage != 0) clearcurrentmsg()
     data.messageunreaddata.unreadnumber = 0 //清空未读
     frienddata.UnreadMessage = 0 //清空好友未读
 
-    scrolltonew(0)
+    setTimeout(() => {
+        scrolltonew(0)
+    }, 200)
     setTimeout(() => {
         msglist.value.addEventListener("scroll", setcurrentlistener)
     }, 0);
@@ -610,7 +641,7 @@ const setcurrentfriendlist = (frienddata: Friend) => {
 
     setTimeout(() => {
         data.loadingmessagelist = false
-    }, 150);
+    }, 250);
 }
 
 // 登录
@@ -674,7 +705,7 @@ const outlogin = () => {
     data.currentSelectTab = true
     data.currentfrienddata = <Friend>{}
     data.input = ""
-    data.searchgroupinput = ""
+    data.searchdata.searchinput = ""
     data.addgroupdata.addgroupinput = ""
     data.addgroupdata.addgroupsearchlist = <GroupinfoList>[]
     data.soundrecorddata.visible = false
@@ -683,7 +714,10 @@ const outlogin = () => {
 
 // 处理消息
 const handleMsg = (msg: any) => {
-    const DefaultGroupMsg = () => {
+    const DefaultGroupMsg = async (msg: MessageListitem) => {
+        if (msg.MsgType == 2) {
+            msg.Msg = await imgurltolocalimg(msg.Msg)
+        }
         data.grouplist.forEach((group, index) => {
             // console.log(group.GroupInfo.ID, msg.GroupID);
             if (group.GroupInfo.ID == msg.GroupID) {
@@ -704,17 +738,22 @@ const handleMsg = (msg: any) => {
 
     // 有用户退出群聊
     const QuitGroupMsg = async (msg: MessageListitem) => {
-        let targetgroup  =  data.grouplist.find(group => group.GroupInfo.ID == msg.GroupID)
-        if (typeof  targetgroup != "undefined"){
+        let targetgroup = data.grouplist.find(group => group.GroupInfo.ID == msg.GroupID)
+        if (typeof targetgroup != "undefined") {
             targetgroup.MessageList.push(msg)
             targetgroup.GroupInfo.MemberCount--
         }
         // data.grouplist.find(group => group.GroupInfo.ID == msg.GroupID)?.MessageList.push(msg)
     }
 
-    const JoginGroupMsg = async () => {
-        refreshgroupnoticedata()
-        refreshgrouplistdata()
+    const JoginGroupMsg = async (msg: MessageListitem) => {
+        // refreshgroupnoticedata()
+        let targetgroup = data.grouplist.find(group => group.GroupInfo.ID == msg.GroupID)
+        if (typeof targetgroup != "undefined") {
+            targetgroup.MessageList.push(msg)
+            targetgroup.GroupInfo.MemberCount++
+        }
+        // refreshgrouplistdata()
     }
 
     // 解散群聊
@@ -722,7 +761,7 @@ const handleMsg = (msg: any) => {
         if (JSON.stringify(data.currentgroupdata) != "{}") {
             if (msg.GroupID == data.currentgroupdata.GroupInfo.ID) {
                 console.log("清空当前列表");
-                tip('default','当前群聊已解散')
+                tip('info', '当前群聊已解散')
                 data.currentgroupdata = <GroupList>{}
             }
         }
@@ -730,8 +769,11 @@ const handleMsg = (msg: any) => {
         data.grouplist = data.grouplist.filter(group => group.GroupInfo.ID !== msg.GroupID)
     }
 
-    const DefaultFriendMsg = (msg: FriendMessageListitem) => {
+    const DefaultFriendMsg = async (msg: FriendMessageListitem) => {
 
+        if (msg.MsgType == 1002) {
+            msg.Msg = await imgurltolocalimg(msg.Msg)
+        }
         data.userdata.FriendList.forEach((friend: Friend, index: number) => {
             if (friend.Id == msg.UserID || friend.Id == msg.ReceiveUserID) {
                 friend.MessageList.push(msg)
@@ -762,7 +804,7 @@ const handleMsg = (msg: any) => {
 
                 scrolltonew(0, true)
             } else {
-                console.log("未读加以");
+                console.log("未读加一");
                 data.messageunreaddata.unreadnumber += 1
             }
         } else { //否则,收到一条好友消息,但是未读
@@ -803,7 +845,7 @@ const handleMsg = (msg: any) => {
     const msgtype = msg.MsgType
     typelist[msgtype](msg)
 
-    if (msg.UserID != data.userdata.ID) { //如果不是自己发的消息
+    if (msg.UserID != data.userdata.ID && msg.MsgType < 500) { //如果不是自己发的消息并且不是刷新消息
         if (JSON.stringify(data.currentgroupdata) != "{}") { //当前是否选中了群聊
             if (data.currentgroupdata.GroupInfo.ID != msg.GroupID) {//并且选中的群聊不是消息的群聊
                 data.grouplist.forEach(group => {
@@ -830,7 +872,9 @@ const handleMsg = (msg: any) => {
         msg.UserID != data.userdata.ID
     ) {
         if (scrollTop + offsetHeight + (3 * 83.6) > scrollHeight) {
-            scrolltonew(0, true)
+            setTimeout(() => {
+                scrolltonew(0, true)
+            }, 500);
         } else {
             data.messageunreaddata.unreadnumber += 1
         }
@@ -1008,7 +1052,7 @@ const creategroup = async () => {
         tip('success', res.data.msg)
         // refreshgrouplist()
         data.creategroupdata = {
-            headeruploadurl: `http://${fileurl}/uploadfile`,
+            headeruploadurl: `http://${fileurl}/file/uploadfile`,
             creategroupinput: "",
             createGroupDialogVisible: false,
             headerurl: "",
@@ -1111,11 +1155,11 @@ const openeditgroupmenu = (e: any, item: GroupList) => {
                         data.quitgroupdata.targetgroupdata = item
                         data.quitgroupdata.quitGroupDialogVisible = true
                     }
-                },{
-                    label:"复制群号",
+                }, {
+                    label: "复制群号",
                     onClick: () => {
                         navigator.clipboard.writeText(item.GroupInfo.ID.toString())
-                        tip("success","复制成功!")
+                        tip("success", "复制成功!")
                     }
                 }
             ]
@@ -1239,7 +1283,7 @@ const sendemailCode = () => {
         tip("success", res.data.msg)
 
     }).catch(err => {
-        tip("error", err.response.data.msg)
+        tip("error", "验证码发送失败!")
         console.log(err);
 
     })
@@ -1265,8 +1309,8 @@ const scrolltonew = (delay: number = 0, smooth: boolean = false) => {
     }
     setTimeout(() => {
         let h = 0
-        if (data.currentSelectType == 1) h = data.currentgroupdata.MessageList.length * 150
-        if (data.currentSelectType == 2) h = data.currentfrienddata.MessageList.length * 150
+        if (data.currentSelectType == 1) h = data.currentgroupdata.MessageList.length * 300
+        if (data.currentSelectType == 2) h = data.currentfrienddata.MessageList.length * 300
         // console.log(h);
         msglist.value.scrollTo({ top: h, behavior: smooth ? "smooth" : "instant" })
     }, delay);
@@ -1318,7 +1362,7 @@ const onErrorUploadImg = (response: any, uploadFile: UploadFile, uploadFiles: Up
 }
 
 
-const TodoMessagequeue:Array<Message> = []
+const TodoMessagequeue: Array<string> = []
 // 连接ws
 const connectws = () => {
     // 连接ws
@@ -1352,12 +1396,9 @@ const connectws = () => {
     // 接收消息 
     data.ws.wsconn.onmessage = function (evt: any) {
         var msgstr = evt.data.split('\n');
-        let msg = JSON.parse(msgstr)
         setTimeout(() => {
             TodoMessagequeue.push(msgstr)
         }, 0);
-        console.log("收到消息:", msg);
-        // handleMsg(msg)
     }
 
     data.ws.wsconn.onerror = function (evt: any) {
@@ -1367,13 +1408,32 @@ const connectws = () => {
 
 // 消费消息
 setInterval(() => {
-    if (TodoMessagequeue.length ==0) {
+    if (TodoMessagequeue.length == 0) {
         return
     }
-    let msg = TodoMessagequeue.shift()
-    console.log("消费了一条消息");
-    handleMsg(msg)
-},100)
+    let msgstr = TodoMessagequeue.shift()
+    if (typeof msgstr == "undefined") return
+    const regex = /\{([^}]+)\}/g;
+    let match;
+    while ((match = regex.exec(msgstr)) !== null) {
+        const innerContent = match[1];
+
+        try {
+            // 使用 JSON.parse 将字符串解析成对象
+            const msg = JSON.parse(`{${innerContent}}`);
+            console.log("消费了一条消息", msg);
+            handleMsg(msg)
+        } catch (error) {
+            console.error('Error parsing JSON:', error);
+        }
+    }
+
+    // let msg = JSON.parse(msgstr)
+    // console.log("消费了一条消息", msg);
+    // handleMsg(msg)
+
+
+}, 100)
 
 // 打开用户详情对话框
 const userdetaildialoghandleClose = () => {
@@ -1381,7 +1441,7 @@ const userdetaildialoghandleClose = () => {
 }
 
 // 修改用户信息
-const edituserdata = (age: number, city: string,introduce:string) => {
+const edituserdata = (age: number, city: string, introduce: string) => {
     data.userdata.Age = age
     data.userdata.City = city
     data.userdata.Introduce = introduce
@@ -1405,7 +1465,7 @@ const closecreategroupdialog = () => {
 const lookuserinfo = (item: MessageListitem) => {
     data.userinfodata.userdata = item
     if (CurrentCheckUserIsFriend) {
-        data.userinfodata.friendinfodata = data.userdata.FriendList.filter(f=>f.Id==item.UserID)[0] || <Friend>{}
+        data.userinfodata.friendinfodata = data.userdata.FriendList.filter(f => f.Id == item.UserID)[0] || <Friend>{}
     }
     data.userinfodata.UserDetailDialogVisible = true
 }
@@ -1444,6 +1504,34 @@ const preapplyaddfriend = (item: Friend) => {
     data.searchfrienddata.targetfrienddata = item
     data.addUserdata.targetUserData = item
     data.addUserdata.addUserDialogVisible = true
+}
+
+const imgurltolocalimg = async (url: string) => {
+    let res = await getimgorigindataapi(url)
+    // console.log(res.data);
+    if (res.status == 200) {
+        let bloburl = URL.createObjectURL(res.data)
+        return bloburl
+    } else {
+        return url
+    }
+}
+
+const ToSearchTarget = (item: MatchingItem) => {
+
+    if (item.type == 1) {
+        let targetdata = data.grouplist.find(g => {
+            return g.GroupInfo.ID == parseInt(item.originnumber || '0')
+        })
+        targetdata ? setcurrentgrouplist(targetdata) : ''
+    } else {
+        let targetdata = data.userdata.FriendList.find(g => {
+            return g.Id == parseInt(item.originnumber || '0')
+        })
+        targetdata ? setcurrentfriendlist(targetdata) : ''
+    }
+    data.searchdata.searchinput = ''
+    data.searchdata.searchResult = []
 }
 
 export type GroupInfo = {

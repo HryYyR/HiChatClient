@@ -15,13 +15,13 @@
 
         <el-image
         class="msg_info" 
-        :src="`http://${fileurl}/${item.Msg}`"
+        :src="item.Msg.includes('blob')?item.Msg:`http://${fileurl}/${item.Msg}`"
         :zoom-rate="1.1"
         :max-scale="1"
         :min-scale="0.2"
         v-if="item.MsgType == 1002"
         :class="item.UserID == props.userdata.ID ? 'selfinfo' : ''" 
-        :preview-src-list="[`http://${fileurl}/${item.Msg}`]"
+        :preview-src-list="[item.Msg.includes('blob')?item.Msg:`http://${fileurl}/${item.Msg}`]"
         fit="cover"
         hide-on-click-modal
         />

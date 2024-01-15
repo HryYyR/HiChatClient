@@ -143,7 +143,6 @@
         flex-direction: column;
         -webkit-user-drag: drag;
 
-
         .group_tools {
             height: 60px;
             display: flex;
@@ -153,12 +152,8 @@
             background-color: white;
 
             input {
-                height: 20px;
+                height: 30px;
                 border-radius: 5px;
-                width: 75%;
-                padding: 5px !important;
-                outline: none;
-                border: 1px solid rgba(0, 0, 0, 0.1);
             }
 
             .open_addgroup_dialog_btn {
@@ -180,6 +175,46 @@
                     color: rgb(255, 255, 255);
                     background-color: rgb(122, 134, 229);
                 }
+            }
+        }
+
+        .search_result {
+            top: 120px;
+            z-index: 99;
+            background-color: white;
+            ;
+            color: rgba(0, 0, 0, 0.7);
+            overflow-y: scroll;
+            height: 75%;
+
+            :hover {
+                background-color: rgb(227, 227, 227);
+            }
+
+            p {
+                display: flex;
+                align-items: center;
+                height: 50px;
+                padding: 5px 0 5px 10px;
+                cursor: pointer;
+
+                &>span:nth-child(2) {
+                    max-width: 50%;
+                    overflow: hidden;
+                    white-space: 1;
+                    text-overflow: ellipsis;
+                }
+
+                &>span:nth-child(3) {
+                    color: rgba(0, 0, 0, 0.5);
+                }
+            }
+
+            img {
+                height: 46px;
+                width: 46px;
+                border-radius: 50px;
+                margin-right: 5px;
             }
         }
 

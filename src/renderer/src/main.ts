@@ -18,7 +18,8 @@ import ContextMenu from '@imengyu/vue3-context-menu'
 // axios.defaults.baseURL = "http://hyyyh.top:3004"
 
 
-export const fileurl = 'localhost:3006'
+export const fileurl = 'localhost'
+// export const fileurl = 'localhost:3006'
 export const staticurl = "localhost:3005"
 export const wsurl = "localhost:3004"
 axios.defaults.baseURL = "http://localhost:3004"
