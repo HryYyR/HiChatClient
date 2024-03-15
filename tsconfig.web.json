@@ -6,7 +6,7 @@
     "src/renderer/src/**/*.ts",
     "src/renderer/src/**/*.vue",
     "src/renderer/src/**/*.ts",
-    "src/preload/*.d.ts",
+    "src/preload/*.d.ts", "src/renderer/nested",
   ],
   "files": [
     "d:/GoWorks/src/go-websocket-web-electron/go-websocket-web-electron/src/renderer/src/store/common.ts",

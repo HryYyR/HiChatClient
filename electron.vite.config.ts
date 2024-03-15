@@ -6,6 +6,8 @@ import AutoImport from 'unplugin-auto-import/vite'
 import Components from 'unplugin-vue-components/vite'
 import { ElementPlusResolver } from 'unplugin-vue-components/resolvers'
 
+import { terser } from 'rollup-plugin-terser';
+
 export default defineConfig({
   main: {
     plugins: [externalizeDepsPlugin()]
@@ -17,7 +19,8 @@ export default defineConfig({
       }),
       Components({
         resolvers: [ElementPlusResolver()]
-      })
+      }),
+      terser({compress:{drop_console:true,drop_debugger:true}})
     ]
   },
   renderer: {
@@ -26,6 +29,15 @@ export default defineConfig({
         '@renderer': resolve('src/renderer/src')
       }
     },
-    plugins: [vue()]
+    build:{
+      rollupOptions:{
+        input:{
+          main:resolve(__dirname,'src/renderer/index.html'),
+          nested:resolve(__dirname,'src/renderer/nested/index.html'),
+        }
+      }
+    },
+    plugins: [vue()],
+    base:'./'
   }
 })

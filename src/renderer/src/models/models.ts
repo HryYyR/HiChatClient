@@ -77,6 +77,7 @@ export type MessageListitem = {
     IsReply: boolean
     Msg: string
     MsgType: number
+    MsgStatus?:boolean
     ReplyUserID: number
     UserID: number
     UserName: string
@@ -111,9 +112,16 @@ export type FriendMessageListitem = {
     ReceiveUserAvatar: string
     Msg: string
     MsgType: number
+    MsgStatus?:boolean
     IsReply: boolean
     ReplyUserID: number
     Context: any
     CreatedAt: Date
 }
 
+export type AckMsg = {
+    MsgType? :number
+    AckStatus:number
+    UserId :number
+    MsgSort:number
+}

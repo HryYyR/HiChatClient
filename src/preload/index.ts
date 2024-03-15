@@ -21,7 +21,15 @@ const api: api = {
   toClose: () => {
     ipcRenderer.send('toClose')
   },
-
+  createRemoteVideo: (userid: number, identity: string) => {
+    ipcRenderer.send('createRemoteVideo', userid, identity)
+  },
+  closeRemoteVideo: () => {
+    ipcRenderer.send('closeRemoteVideo')
+  },
+  notification:(title:string,msg:string)=>{
+    ipcRenderer.send('notification',title,msg)
+  }
 }
 type api = {
   settitle: Function
@@ -30,6 +38,9 @@ type api = {
   toMin: Function
   toMax: Function
   toClose: Function
+  createRemoteVideo: Function
+  closeRemoteVideo: Function
+  notification:Function
 }
 
 // Use `contextBridge` APIs to expose Electron APIs to

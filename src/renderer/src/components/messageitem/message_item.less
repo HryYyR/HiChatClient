@@ -32,12 +32,17 @@
             border-radius: 10px;
             max-width: 400px;
             overflow-wrap: break-word;
+            display: block;
+
+
+
         }
 
         .selfinfo {
             color: white;
             background-color: rgb(0, 153, 255);
         }
+    
     }
 
 
@@ -101,4 +106,26 @@
 
 
 
+}
+
+.sendingmsg {
+    &::before {
+        position: relative;
+        width: 10px;
+        height: 10px;
+        background-color: red;
+        border: dashed 3px #8080808c;
+        border-radius: 50%;
+        animation: cycle 1s linear infinite;
+    }
+}
+
+@keyframes cycle {
+    0% {
+        transform: rotate(0deg)
+    }
+
+    100% {
+        transform: rotate(360deg)
+    }
 }

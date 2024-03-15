@@ -1,28 +1,29 @@
 <template>
     <div class="msg_item"
-        :style="{ justifyContent: (item.MsgType == 1 || item.MsgType == 2|| item.MsgType==3) ? item.UserID == props.userdata.ID ? 'flex-end' : 'flex-start' : 'center' }">
+        :style="{ justifyContent: (item.MsgType == 1 || item.MsgType == 2 || item.MsgType == 3) ? item.UserID == props.userdata.ID ? 'flex-end' : 'flex-start' : 'center' }">
         <MessageTimeVue :time="item.CreatedAt" :pretime="preitem.CreatedAt" />
         <!-- 左头像 -->
         <div class="msg_header" @contextmenu.prevent.stop="openHeaderHandleMenu($event, item)"
-        @click="emit('lookuserinfo',item)"
-            v-if="item.UserID != props.userdata.ID && (item.MsgType == 1 || item.MsgType == 2|| item.MsgType==3)">
+            @click="emit('lookuserinfo', item)"
+            v-if="item.UserID != props.userdata.ID && (item.MsgType == 1 || item.MsgType == 2 || item.MsgType == 3)">
             <img :src="`http://${fileurl}/${item.UserAvatar}`" alt="">
         </div>
 
         <!-- 内容 -->
-        <pre style="text-wrap: wrap;" v-if="item.MsgType == 1 || item.MsgType == 2 || item.MsgType==3 " class="msg_text"
+        <pre style="text-wrap: wrap;" v-if="item.MsgType == 1 || item.MsgType == 2 || item.MsgType == 3" class="msg_text"
             :style="{ alignItems: item.UserID == props.userdata.ID ? 'flex-end' : 'flex-start' }">
+
         <p>{{ item.UserName }}</p>
 
         <el-image
         class="msg_info" 
-        :src="item.Msg.includes('blob')?item.Msg:`http://${fileurl}/${item.Msg}`"
+        :src="item.Msg.includes('blob') ? item.Msg : `http://${fileurl}/${item.Msg}`"
         :zoom-rate="1.1"
         :max-scale="1"
         :min-scale="0.2"
         v-if="item.MsgType == 2"
         :class="item.UserID == props.userdata.ID ? 'selfinfo' : ''" 
-        :preview-src-list="[item.Msg.includes('blob')?item.Msg:`http://${fileurl}/${item.Msg}`]"
+        :preview-src-list="[item.Msg.includes('blob') ? item.Msg : `http://${fileurl}/${item.Msg}`]"
         fit="cover"
         hide-on-click-modal
         />
@@ -33,14 +34,19 @@
         v-if="item.MsgType == 1"
         @contextmenu.prevent.stop="openMsgHandleMenu($event, item)"  
         class="msg_info" 
-        :class="item.UserID == props.userdata.ID ? 'selfinfo' : ''" 
+        :class="{
+            selfinfo: item.UserID == props.userdata.ID,
+        }"
         v-text="item.Msg"></p>
+        <div class="sendingmsg"></div>
+
         </pre>
 
 
 
         <!-- 右头像 -->
-        <div class="msg_header" v-if="item.UserID == props.userdata.ID && (item.MsgType == 1 || item.MsgType == 2 || item.MsgType == 3)"
+        <div class="msg_header"
+            v-if="item.UserID == props.userdata.ID && (item.MsgType == 1 || item.MsgType == 2 || item.MsgType == 3)"
             @contextmenu.prevent.stop="openHeaderHandleMenu($event, item)">
             <img :src="`http://${fileurl}/${item.UserAvatar}`" alt="">
         </div>
@@ -61,10 +67,10 @@ import MessageTimeVue from './messagetime/message_time.vue'
 import { ElMessage } from 'element-plus';
 import { PropType } from 'vue';
 import { MessageListitem } from '@renderer/models/models';
-const emit = defineEmits(['openMsgHandleMenu', 'changeHeaderDialog','lookuserinfo'])
+const emit = defineEmits(['openMsgHandleMenu', 'changeHeaderDialog', 'lookuserinfo'])
 let props = defineProps({
     item: {
-        type: Object as PropType<MessageListitem> ,
+        type: Object as PropType<MessageListitem>,
         required: true,
     },
     preitem: {
@@ -125,14 +131,14 @@ const openHeaderHandleMenu = (e, item) => {
                             tip('error', err.response.Msg)
                         })
                     },
-                    hidden:props.userdata.FriendList ?props.userdata.FriendList.filter(i=>i.Id == item.UserID).length !=0:false
-                    
+                    hidden: props.userdata.FriendList ? props.userdata.FriendList.filter(i => i.Id == item.UserID).length != 0 : false
+
                 },
                 {
                     label: "查看资料",
                     onClick: () => {
                         console.log(item);
-                        emit('lookuserinfo',item)
+                        emit('lookuserinfo', item)
                     }
                 },
             ]

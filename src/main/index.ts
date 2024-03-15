@@ -1,9 +1,12 @@
-import { app, shell, BrowserWindow, ipcMain, Tray, Menu } from 'electron'
+import { app, shell, BrowserWindow, ipcMain, Tray, Menu, Notification } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
 
 
+let remoteVidoeWindow: BrowserWindow
+
+let PublicNotification: Notification
 
 function createWindow(): void {
   // Create the browser window.
@@ -21,8 +24,7 @@ function createWindow(): void {
       preload: join(__dirname, '../preload/index.js'),
       sandbox: false,
       nodeIntegration: true,
-      devTools: true,
-
+      // devTools: true,
     }
   })
 
@@ -102,6 +104,11 @@ function createWindow(): void {
         {
           label: '退出',
           click: () => {
+            if (remoteVidoeWindow) {
+              if (!remoteVidoeWindow.isDestroyed()) {
+                remoteVidoeWindow.close()
+              }
+            }
             tray.destroy()
             mainWindow.close()
           }
@@ -137,8 +144,54 @@ function createWindow(): void {
 
 
 
-  mainWindow.on('ready-to-show', () => {
-    mainWindow.show()
+  ipcMain.on('createRemoteVideo', async (_event, id, identity) => {
+    remoteVidoeWindow = new BrowserWindow({
+      width: 620,
+      height: 465,
+      resizable: false, //禁止改变主窗口尺寸
+      frame: false,
+      autoHideMenuBar: true,
+      title: "视频通话",
+      webPreferences: {
+        nodeIntegration: false,
+        contextIsolation: true,
+        preload: join(__dirname, '../preload/index.js'),
+        devTools: true,
+        sandbox: false
+      }
+    })
+    remoteVidoeWindow.webContents.openDevTools()
+
+    //引入定义ui的渲染层
+    remoteVidoeWindow.loadFile(join(__dirname, '../renderer/nested/index.html'), {
+      query: {
+        id: id,
+        identity: identity
+      }
+    })
+
+    //当监听到窗口被关闭
+    remoteVidoeWindow.on('close', () => {
+      //清空内存，避免溢出
+      remoteVidoeWindow.close()
+    })
+  })
+
+  // 关闭远程视频窗口
+  ipcMain.on('closeRemoteVideo', async (_event,) => {
+    remoteVidoeWindow.close()
+  })
+
+  // 通知
+  ipcMain.on('notification', async (_event, title: string, msg: string) => {
+
+    if (Notification.isSupported()) {
+      PublicNotification.addListener('click', () => mainWindow.show())
+      PublicNotification.title = title
+      PublicNotification.body = msg
+      PublicNotification.show()
+    }
+
   })
 
 
@@ -163,6 +216,11 @@ function createWindow(): void {
 app.whenReady().then(() => {
   // Set app user model id for windows
   electronApp.setAppUserModelId('com.electron')
+
+  PublicNotification = new Notification({
+    title: "",
+    body: ""
+  })
 
   // Default open or close DevTools by F12 in development
   // and ignore CommandOrControl + R in production.

@@ -1,11 +1,19 @@
 import axios from 'axios'
 import { Md5 } from 'ts-md5';
 
+// const defaulturl = "http://localhost"
+// const apifileurl = "http://localhost"
+
+
 const defaulturl = "http://localhost"
 const apifileurl = "http://localhost"
-// const apifileurl = "http://localhost:3006"
 const apistaticurl = "http://localhost:3005"
 axios.defaults.baseURL = "http://localhost:3004"
+
+// const defaulturl = "http://192.168.137.1"
+// const apifileurl = "http://192.168.137.1"
+// const apistaticurl = "http://192.168.137.1:3005"
+// axios.defaults.baseURL = "http://192.168.137.1:3004"
 
 // 登录
 export function loginapi(username: string, password: string) {
@@ -198,6 +206,15 @@ export function adduserapi(applyid: number, status: number) {
     return axios.post("/user/handleadduser", msg)
 }
 
+// 检查指定用户登录状态
+export function startusertouservideocall(userid: number) {
+    let msg = {
+        userid: userid,
+    }
+    return axios.post("/user/startusertouservideocall", msg)
+}
+
+
 // 上传资源
 export function uploadresourceapi(file: FormData) {
     return axios({
@@ -222,6 +239,8 @@ export function searchfriendapi(str: string) {
         data: msg,
     })
 }
+
+// 获取指定群聊消息列表
 export function getgroupmessagelist(groupid: Number, currentnum: Number) {
     let msg = {
         groupid: groupid,
@@ -235,6 +254,7 @@ export function getgroupmessagelist(groupid: Number, currentnum: Number) {
 }
 
 
+// 获取图片源数据
 export function getimgorigindataapi(imgurl: string) {
     return axios({
         url: apifileurl + "/" + imgurl,
@@ -242,3 +262,4 @@ export function getimgorigindataapi(imgurl: string) {
         responseType:'blob'
     })
 }
+

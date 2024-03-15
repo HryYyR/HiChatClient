@@ -1,0 +1,318 @@
+<!doctype html>
+<html>
+
+<head>
+    <meta charset="UTF-8" />
+    <title>Electron</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+</head>
+<style>
+    * {
+        padding: 0;
+        margin: 0;
+    }
+
+    .app {
+        height: 438px;
+        overflow: hidden;
+    }
+
+    .dealwithcall {
+        position: absolute;
+        width: 100%;
+        bottom: 20px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+
+    .remoteVideo {
+        display: none;
+        width: 100%;
+    }
+
+    .localVideo_context {
+        position: absolute;
+        right: 5px;
+        top: 10px;
+        border: 3px solid white;
+        border-radius: 5px;
+    }
+
+    .localVideo {
+        width: 100px;
+    }
+
+    .btn {
+        width: 80px;
+        height: 30px;
+        border-radius: 10px;
+        color: white;
+        font-size: 1.2rem;
+        font-weight: 900;
+        margin: 0px 10px;
+        text-align: center;
+        cursor: pointer;
+    }
+
+    .receivebtn {
+        background-color: skyblue;
+    }
+
+    .refusebtn {
+        background-color: red;
+    }
+
+    .waitinfo {
+        display: flex;
+        width: 100%;
+        justify-content: center;
+        align-items: center;
+        height: 460px;
+    }
+
+    .waitinfo_txt {
+        font-size: 2rem;
+        font-weight: 900;
+    }
+
+    .disconnect {
+        display: flex;
+        width: 100%;
+        justify-content: center;
+        align-items: center;
+        position: absolute;
+        bottom: 20px;
+        display: none;
+        cursor: pointer;
+    }
+
+    .disconnectbtn {
+        width: 90px;
+        height: 50px;
+        background-color: red;
+        border-radius: 6px;
+        font-size: 1.2rem;
+        color: white;
+        font-weight: 600;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 99;
+    }
+    .drag_Bar{
+        width: 100%;
+        position: absolute;
+        top: 0;
+        height: 80px;
+        z-index: 99;
+        -webkit-app-region: drag;
+    }
+</style>
+
+<body>
+    <div id="app" class="app">
+        <div class="drag_Bar">
+            
+        </div>
+        <div class="waitinfo">
+            <p class="waitinfo_txt">等待对方接听</p>
+        </div>
+        <div class="dealwithcall">
+            <div id="startScreenSharing" class="btn receivebtn">接受</div>
+            <div class="btn refusebtn" id="refusebtn">拒绝</div>
+        </div>
+        <div class="disconnect">
+            <div class="disconnectbtn">挂断</div>
+
+        </div>
+
+
+        <video id="remoteVideo" class="remoteVideo" autoplay></video>
+        <audio id="remoteAudio" class="remoteAudio" autoplay></audio>
+        <div class="localVideo_context" id="localvideocontext">
+            <video id="localVideo" class="localVideo" autoplay></video>
+
+        </div>
+    </div>
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        const userid = urlParams.get('id');
+        const identity = urlParams.get('identity');
+
+        // localhost
+        // 192.168.137.1
+        const ws = new WebSocket('ws://localhost:3009/ws?id=' + userid)
+        ws.binaryType = "arraybuffer";
+
+        const remoteVideo = document.querySelector('#remoteVideo');
+        const remoteAudio = document.querySelector('#remoteAudio');
+        let localvideo = document.querySelector("#localvideo")
+        let localvideocontext = document.querySelector("#localvideocontext")
+        const startScreenSharingButton = document.getElementById('startScreenSharing');
+
+        const waitinfodom = document.querySelector('.waitinfo');
+        const dealwithcalldom = document.querySelector('.dealwithcall');
+        const disconnectdom = document.querySelector('.disconnect');
+
+
+        const refusebtn = document.getElementById('refusebtn');
+        // 点击拒绝按钮
+        refusebtn.onclick = () => {
+            window.electron.ipcRenderer.send('closeRemoteVideo')
+        }
+
+        const disconnectbtn = document.querySelector('.disconnectbtn');
+        // 点击挂断按钮
+        disconnectbtn.onclick = () => {
+            window.electron.ipcRenderer.send('closeRemoteVideo')
+        }
+
+        if (identity == "starter") {
+            dealwithcalldom.style.display = 'none';
+            init()
+        } else {
+            waitinfodom.style.display = 'none';
+        }
+
+
+        startScreenSharingButton.onclick = () => {
+            init();
+        }
+
+        const PeerConnection = window.RTCPeerConnection;
+        var peerConnect = new PeerConnection()
+
+        async function init() {
+            // 获取数据流
+            navigator.mediaDevices.getUserMedia({
+                video: true,
+                audio: true
+            }).then(playVideo).catch(e => {
+                console.log(e)
+                alert("无可用摄像头")
+                window.electron.ipcRenderer.send('closeRemoteVideo')
+            })
+
+            const PeerConnection = window.RTCPeerConnection || window.mozRTCPeerConnection || window.webkitRTCPeerConnection;
+            !PeerConnection && message.error('浏览器不支持WebRTC!');
+            var peerConnect = new PeerConnection()
+
+            // 创建本地peer并把peer发给服务器
+            async function playVideo(stream) {
+                localVideo.srcObject = stream
+
+                stream.getTracks().forEach((track) => {
+                    peerConnect.addTrack(track, stream)
+                })
+
+                createOffer() //创建offer并发送
+            }
+
+            const createOffer = async () => {
+                const offer = await peerConnect.createOffer();
+                await peerConnect.setLocalDescription(offer);
+
+                let dat = {
+                    type: "offer",
+                    userid: userid,
+                    sdp: JSON.stringify(offer)
+                }
+                ws.send(JSON.stringify(dat))
+            }
+
+            peerConnect.onicecandidate = (candidateInfo) => {
+                console.log("发送ICE-candidate");
+                console.log(candidateInfo.candidate);
+                if (candidateInfo.candidate) {
+                    let dat = {
+                        type: "ICE-candidate",
+                        userid: userid,
+                        sdp: JSON.stringify(candidateInfo.candidate)
+
+                    }
+                    ws.send(JSON.stringify(dat))
+                }
+            }
+
+            // 接收数据
+            ws.onmessage = async (event) => {
+                let str = arrayBufferToString(event.data)
+                let jsonstr = JSON.parse(str)
+
+                let offer = JSON.parse(jsonstr.sdp)
+                console.log(jsonstr.type);
+                // console.log(jsonstr);
+
+                if (jsonstr.type === "LoginOut") {
+                    console.log("close connection");
+                    window.electron.ipcRenderer.send('closeRemoteVideo')
+                }
+
+                if (jsonstr.type === "offer") {
+                    const offerSdp = new RTCSessionDescription(offer);
+                    await peerConnect.setRemoteDescription(offerSdp);
+                    const answer = await peerConnect.createAnswer();
+                    await peerConnect.setLocalDescription(answer);
+                    let dat = {
+                        type: "answer",
+                        userid: userid,
+                        sdp: JSON.stringify(answer)
+                    }
+                    ws.send(JSON.stringify(dat))
+                    // console.log(answer);
+                }
+
+                if (jsonstr.type === "answer") {
+                    await peerConnect.setRemoteDescription(offer)
+                }
+                if (jsonstr.type == "ICE-candidate") {
+                    console.log("收到ICE-candidate");
+                    console.log(offer);
+                    await peerConnect.addIceCandidate(offer)
+                }
+            }
+
+            peerConnect.ontrack = (track) => {
+                dealwithcalldom.style.display = 'none';
+                waitinfodom.style.display = 'none';
+                disconnectdom.style.display = 'flex';
+                console.log("连接成功!");
+                console.log(track);
+                if (track.track.kind == 'video') {
+                    console.log('设置播放源视频');
+                    remoteVideo.srcObject = track.streams[0];
+                    remoteVideo.style.display = 'block'
+                }
+                if (track.track.kind == 'audio') {
+                    remoteAudio.srcObject = track.streams[0];
+                }
+            }
+        }
+        ws.onclose = async () => {
+            window.electron.ipcRenderer.send('closeRemoteVideo')
+        }
+
+
+        // 交换视频窗口
+        localvideocontext.onclick = () => {
+            let swapsrc = localVideo.srcObject
+            localVideo.srcObject = remoteVideo.srcObject
+            remoteVideo.srcObject = swapsrc
+        }
+
+
+        function arrayBufferToString(buffer) {
+            const uint8Array = new Uint8Array(buffer);
+            let result = '';
+            for (let i = 0; i < uint8Array.length; i++) {
+                result += String.fromCharCode(uint8Array[i]);
+            }
+            return result;
+        }
+
+
+    </script>
+</body>
+
+</html>

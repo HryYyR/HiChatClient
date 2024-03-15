@@ -16,7 +16,7 @@
 <script setup lang="ts">
 
 const win: any = window
-console.log(win);
+//console.log(win);
 
 const toMin = () => {
     win.api.toMin()
@@ -30,13 +30,14 @@ const toMax = () => {
 </script>
 
 <style scoped lang="less" >
-.header{
+.header {
     position: absolute;
     -webkit-app-region: drag;
     width: 55vw;
     height: 45px;
     right: 110px;
 }
+
 .tabbar {
     width: 110px;
     position: absolute;
@@ -54,4 +55,5 @@ const toMax = () => {
     i:hover {
         background-color: rgb(228, 228, 228);
     }
-}</style>
+}
+</style>

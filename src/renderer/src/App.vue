@@ -75,7 +75,7 @@
             <div class="search_result" v-if="data.searchdata.searchinput.trim().length != 0">
                 <p v-for="(item) in data.searchdata.searchResult" :key="item.name" @click="ToSearchTarget(item)">
                     <img :src="`http://${fileurl}/${item.avatar}`" alt=""><span v-html="item.name"></span>(<span
-                        v-html="item.number"></span>) ({{ item.type==1?'群聊':'好友' }})
+                        v-html="item.number"></span>) ({{ item.type == 1 ? '群聊' : '好友' }})
                 </p>
                 <p v-show="data.searchdata.searchResult.length == 0">
                     暂无搜索结果
@@ -144,7 +144,15 @@
             <!-- friend标题栏 -->
             <div class="rightlist_option"
                 v-if="data.currentSelectType == 2 && JSON.stringify(data.currentfrienddata) != '{}'">
-                {{ data.currentfrienddata.NikeName || "" }}
+                <p> {{ data.currentfrienddata.NikeName || "" }}</p>
+                <div class="rightlist_option_tool">
+                    <el-icon @click="startUserToUserVideoCall">
+                        <VideoCamera />
+                    </el-icon>
+                    <el-icon>
+                        <Phone />
+                    </el-icon>
+                </div>
             </div>
 
             <!-- friend消息列表 -->
@@ -172,6 +180,8 @@
                 {{ JSON.stringify(data.currentgroupdata) != '{}' ? data.currentgroupdata.GroupInfo.GroupName : "" }} ({{
                     JSON.stringify(data.currentgroupdata) != '{}' ? data.currentgroupdata.GroupInfo.MemberCount : '' }})
             </div>
+
+
 
             <!-- group消息列表 -->
             <div class="rightlist_container" ref="msglist" :style="{ opacity: data.loadingmessagelist ? 0 : 1 }"
@@ -334,7 +344,8 @@ import {
 
     searchfriendapi,
     getgroupmessagelist,
-    getimgorigindataapi
+    getimgorigindataapi,
+    startusertouservideocall
 } from './API/api'
 
 import {
@@ -347,7 +358,6 @@ import {
     MessageListitem,
     Friend,
     FriendMessageListitem,
-
 } from './models/models'
 
 
@@ -378,6 +388,7 @@ const data = reactive({
         wsconn: <any>null,  //ws连接
     },
     wsconnecting: true,
+    // AckFlag: 0,
     islogin: false, //是否登录
     loginloading: false, //是否加载中
     loadingmessagelist: false, //加载消息列表
@@ -470,9 +481,15 @@ const data = reactive({
 
 })
 
+
 watch(data.logindata, (newValue, _) => {
     localStorage.setItem("rememberpassword", newValue.rememberpassword ? "1" : "0")
     localStorage.setItem("autologin", newValue.autologin ? "1" : "0")
+    if (newValue.autologin) {
+        localStorage.setItem("rememberpassword", "1")
+        data.logindata.rememberpassword = true
+    }
+
 })
 
 watch(data, (nv) => {
@@ -545,10 +562,9 @@ const send = () => {
         let message: string = SendFriendResourceMsg(data.input, 1001, data.userdata, data.currentfrienddata)
         data.ws.wsconn.send(message)
     }
+    // data.AckFlag++
     data.input = ""
     // console.log(msglist);
-
-
 }
 
 // 设置监听当前窗口
@@ -674,7 +690,6 @@ const login = () => {
 
         connectws()
         // 设置显示
-
         setTimeout(() => {
             data.loginloading = false
             win.api.changWindowSize()
@@ -712,9 +727,11 @@ const outlogin = () => {
     data.addUserdata.targetUserData = {}
 }
 
+
 // 处理消息
 const handleMsg = (msg: any) => {
     const DefaultGroupMsg = async (msg: MessageListitem) => {
+        // notification
         if (msg.MsgType == 2) {
             msg.Msg = await imgurltolocalimg(msg.Msg)
         }
@@ -726,8 +743,12 @@ const handleMsg = (msg: any) => {
                 let temp = data.grouplist[index]
                 data.grouplist[index] = data.grouplist[0]
                 data.grouplist[0] = temp
+                if (msg.UserID != data.userdata.ID) {
+                    win.api.notification(group.GroupInfo.GroupName, msg.Msg) //系统通知
+                }
             }
         })
+
     }
 
     const refreshGroupMsg = async () => {
@@ -781,6 +802,7 @@ const handleMsg = (msg: any) => {
                 let temp = data.userdata.FriendList[index]
                 data.userdata.FriendList[index] = data.userdata.FriendList[0]
                 data.userdata.FriendList[0] = temp
+
             }
         })
 
@@ -813,14 +835,23 @@ const handleMsg = (msg: any) => {
             data.userdata.FriendList.forEach(i => {
                 if (i.Id == msg.UserID) {
                     console.log("收到一条好友消息,但是未读");
-
                     i.UnreadMessage++
                 }
             });
+            win.api.notification(msg.UserName, msg.Msg) //系统通知
         }
         // console.log(data.userdata.FriendList);
         return
     }
+
+    const UserToUserRemoteVideoCallMsg = async (msg: FriendMessageListitem) => {
+        console.log(msg);
+        win.api.createRemoteVideo(data.userdata.ID, "receiver")
+    }
+
+    // const AckMsg = async () => {
+    //     data.AckFlag--
+    // }
 
     const typelist = {
         1: DefaultGroupMsg,
@@ -837,10 +868,11 @@ const handleMsg = (msg: any) => {
         },
         502: refreshgroupnoticedata,
         503: refreshfriendnoticedata,
-
+        // 888: AckMsg,
         1001: DefaultFriendMsg,
         1002: DefaultFriendMsg,
         1003: DefaultFriendMsg,
+        1501: UserToUserRemoteVideoCallMsg,
     }
     const msgtype = msg.MsgType
     typelist[msgtype](msg)
@@ -880,6 +912,43 @@ const handleMsg = (msg: any) => {
         }
     }
 }
+
+
+// 消费消息
+setInterval(() => {
+    if (TodoMessagequeue.length == 0) {
+        return
+    }
+    let msgstr = TodoMessagequeue.shift()
+    if (typeof msgstr == "undefined") return
+    const regex = /\{([^}]+)\}/g;
+    let match;
+    while ((match = regex.exec(msgstr)) !== null) {
+        const innerContent = match[1];
+        try {
+            // 使用 JSON.parse 将字符串解析成对象
+            const msg = JSON.parse(`{${innerContent}}`);
+            console.log("消费了一条消息", msg);
+            // msg.MsgStatus = false
+            // setTimeout(() => checkmsgisovertime(msg), 1000);
+            handleMsg(msg)
+        } catch (error) {
+            console.error('Error parsing JSON:', error);
+        }
+    }
+}, 100)
+// const checkmsgisovertime = (msg: any) => {
+//     if (data.AckFlag == 0) {
+//         msg.MsgStatus = true
+//     } else {
+//         setTimeout(() => {
+//             if (data.AckFlag == 0) {
+//                 msg.MsgStatus = true
+//             }
+//         }, 5000);
+//     }
+// }
+
 
 // 去注册页面
 const toregister = () => {
@@ -1034,6 +1103,7 @@ const applyentergroup = async () => {
         tip("error", err.response.data.msg)
     })
     data.addgroupdata.addgroupinput = ""
+    data.applyjoingroupdata.Msg = ""
     data.addgroupdata.preaddGroupDialogVisible = false
     data.addgroupdata.addGroupDialogVisible = false
     data.addgroupdata.addgroupsearchlist = <GroupinfoList>{}
@@ -1406,35 +1476,6 @@ const connectws = () => {
     }
 }
 
-// 消费消息
-setInterval(() => {
-    if (TodoMessagequeue.length == 0) {
-        return
-    }
-    let msgstr = TodoMessagequeue.shift()
-    if (typeof msgstr == "undefined") return
-    const regex = /\{([^}]+)\}/g;
-    let match;
-    while ((match = regex.exec(msgstr)) !== null) {
-        const innerContent = match[1];
-
-        try {
-            // 使用 JSON.parse 将字符串解析成对象
-            const msg = JSON.parse(`{${innerContent}}`);
-            console.log("消费了一条消息", msg);
-            handleMsg(msg)
-        } catch (error) {
-            console.error('Error parsing JSON:', error);
-        }
-    }
-
-    // let msg = JSON.parse(msgstr)
-    // console.log("消费了一条消息", msg);
-    // handleMsg(msg)
-
-
-}, 100)
-
 // 打开用户详情对话框
 const userdetaildialoghandleClose = () => {
     data.userdetaildata.UserDetailDialogVisible = !data.userdetaildata.UserDetailDialogVisible
@@ -1506,6 +1547,7 @@ const preapplyaddfriend = (item: Friend) => {
     data.addUserdata.addUserDialogVisible = true
 }
 
+// 把图片地址转为本地地址
 const imgurltolocalimg = async (url: string) => {
     let res = await getimgorigindataapi(url)
     // console.log(res.data);
@@ -1517,6 +1559,7 @@ const imgurltolocalimg = async (url: string) => {
     }
 }
 
+// 进入搜索结果的详情
 const ToSearchTarget = (item: MatchingItem) => {
 
     if (item.type == 1) {
@@ -1532,6 +1575,24 @@ const ToSearchTarget = (item: MatchingItem) => {
     }
     data.searchdata.searchinput = ''
     data.searchdata.searchResult = []
+}
+
+// 发起用户对用户的视频聊天请求
+const startUserToUserVideoCall = async () => {
+    startusertouservideocall(data.currentfrienddata.Id).then(res => {
+        console.log(res);
+        win.api.createRemoteVideo(data.userdata.ID, "starter")
+    }).catch(err => {
+        if (err.response.status == 400) {
+            tip("error", "对方不在线")
+            return
+        }
+        if (err.response.status == 500) {
+            tip("error", "服务器发生了错误")
+            return
+        }
+    })
+
 }
 
 export type GroupInfo = {

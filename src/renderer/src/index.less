@@ -355,11 +355,29 @@
 
 
         .rightlist_option {
-            position: relative;
+            height: 70px;
             display: flex;
             align-items: center;
             font-size: 1.2rem;
-            padding: 10px 0 10px 25px;
+            // background-color: red;
+            position: relative;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            padding: 0px 30px 10px 25px;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+            .rightlist_option_tool{
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                &> *{
+                    margin: 0px 10px;
+                    font-size: 1.5rem;
+                    &:hover{
+                        color: rgb(0, 153, 255);
+                    }
+                }
+            }
             // border-bottom: 1px solid rgba(0, 0, 0, 0.1);
         }
 
@@ -385,14 +403,14 @@
             position: relative;
             padding: 20px 20px 0 20px;
             overflow: auto;
-            height: calc(65% - 50px);
+            height: calc(70% - 70px);
 
 
 
         }
 
         .rightlist_input {
-            height: 35%;
+            height: 30%;
             border-top: 1px solid @borderc;
 
             .input_tool {
