@@ -253,6 +253,19 @@ export function getgroupmessagelist(groupid: Number, currentnum: Number) {
     })
 }
 
+// 获取用户之间的消息列表
+export function getgusermessagelist(targetuserid:number, currentnum: Number) {
+    let msg = {
+        targetuserid: targetuserid,
+        currentnum: currentnum
+    }
+    return axios({
+        url: apistaticurl + "/user/getusermessagelist",
+        method: "POST",
+        data: msg,
+    })
+}
+
 
 // 获取图片源数据
 export function getimgorigindataapi(imgurl: string) {

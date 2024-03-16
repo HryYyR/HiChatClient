@@ -1,5 +1,5 @@
-appId: com.electron.app
-productName: go-websocket-web-electron
+appId: HiChat
+productName: HiChat
 directories:
   buildResources: build
 files:

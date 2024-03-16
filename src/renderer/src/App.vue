@@ -141,6 +141,8 @@
 
         <div class="right_list">
 
+            <p v-if="data.currentSelectType ==0" class="rightlist_background">HiChat</p>
+
             <!-- friend标题栏 -->
             <div class="rightlist_option"
                 v-if="data.currentSelectType == 2 && JSON.stringify(data.currentfrienddata) != '{}'">
@@ -173,14 +175,12 @@
             </div>
 
 
-
             <!-- group标题栏 -->
             <div class="rightlist_option"
                 v-if="data.currentSelectType == 1 && JSON.stringify(data.currentgroupdata) != '{}'">
                 {{ JSON.stringify(data.currentgroupdata) != '{}' ? data.currentgroupdata.GroupInfo.GroupName : "" }} ({{
                     JSON.stringify(data.currentgroupdata) != '{}' ? data.currentgroupdata.GroupInfo.MemberCount : '' }})
             </div>
-
 
 
             <!-- group消息列表 -->
@@ -235,7 +235,6 @@
                 </div>
             </div>
         </div>
-
 
         <!-- 申请加入群聊对话框 -->
         <ApplyJoinGroupDialog :addgroupdata="data.addgroupdata" @preapplyentergroup="preapplyentergroup"
@@ -338,6 +337,7 @@ import {
     exitgroupapi,
 
     adduserapi,
+    getgusermessagelist,
 
     emailcodeapi,
     uploadresourceapi,
@@ -345,7 +345,8 @@ import {
     searchfriendapi,
     getgroupmessagelist,
     getimgorigindataapi,
-    startusertouservideocall
+    startusertouservideocall,
+    
 } from './API/api'
 
 import {
@@ -392,7 +393,7 @@ const data = reactive({
     islogin: false, //是否登录
     loginloading: false, //是否加载中
     loadingmessagelist: false, //加载消息列表
-    loadingmsaageburial: true, //加载消息冷却
+    loadingmsaageburial: true, //是否开启加载消息,在切换窗口时设为true
 
     userdata: <Userdata>{},  //用户信息
     grouplist: <Group>[],//群信息
@@ -595,6 +596,28 @@ const setcurrentlistener = () => {
                 }, 1000);
             })
         }
+
+        if (data.currentSelectType == 2) {
+            data.loadingmsaageburial = false
+            getgusermessagelist((data.currentfrienddata.Id),data.currentfrienddata.MessageList.length).then(res=>{
+                if (res.data.data != null && res.data.data.length != 0) {
+                    data.userdata.FriendList.map(f => {
+                        if (f.Id == data.currentfrienddata.Id) {
+                            f.MessageList.unshift(...res.data.data)
+                        }
+                        return f
+                    })
+                    data.loadingmsaageburial = true
+                }
+            }).catch(err => {
+                console.log(err);
+                tip("error", "获取消息失败!")
+                setTimeout(() => {
+                    data.loadingmsaageburial = true
+                }, 1000);
+            })
+        }
+
     }
     if (scrollHeight - scrollTop - 3 * 83.6 < offsetHeight
     ) {
@@ -608,7 +631,7 @@ const setcurrentgrouplist = (group: GroupList) => {
         return
     }
     data.loadingmessagelist = true
-    data.loadingmsaageburial = true
+    data.loadingmsaageburial = true //在滚动到顶部时,是否开启监听,获取消息
     data.currentgroupdata = group
     data.currentSelectTab = false
     // console.log(data.currentgroupdata);
@@ -636,7 +659,7 @@ const setcurrentfriendlist = (frienddata: Friend) => {
         return
     }
     data.loadingmessagelist = true
-    data.loadingmsaageburial = true
+    data.loadingmsaageburial = true //在滚动到顶部时,是否开启监听,获取消息
     data.currentfrienddata = frienddata
     data.currentSelectTab = true
     data.userinfodata.UserDetailDialogVisible = false
@@ -1097,10 +1120,10 @@ const applyentergroup = async () => {
 
     applyjoingroupapi(data.applyjoingroupdata).then(res => {
         console.log(res);
-        tip("success", res.data.msg)
+        tip("success", "申请成功")
         refreshgroupnoticedata()
-    }).catch(err => {
-        tip("error", err.response.data.msg)
+    }).catch(() => {
+        tip("error", "申请失败,请稍后重试")
     })
     data.addgroupdata.addgroupinput = ""
     data.applyjoingroupdata.Msg = ""
@@ -1119,7 +1142,7 @@ const creategroup = async () => {
 
         console.log(data.grouplist);
 
-        tip('success', res.data.msg)
+        tip('success', "创建成功")
         // refreshgrouplist()
         data.creategroupdata = {
             headeruploadurl: `http://${fileurl}/file/uploadfile`,
@@ -1128,8 +1151,8 @@ const creategroup = async () => {
             headerurl: "",
             createstep: 1
         }
-    }).catch(err => {
-        tip('error', err.response.data.msg)
+    }).catch(() => {
+        tip('error', "创建失败,请稍后重试")
     })
 }
 
@@ -1155,11 +1178,10 @@ const quitgroup = async () => {
 
         tip("success", GroupInfo.CreaterID == data.userdata.ID ? "解散成功!" : "退出成功!")
 
+    }).catch(err => {
+        console.log(err);
+        tip("error", "操作失败")
     })
-    // .catch(err => {
-    //     console.log(err);
-    //     tip("error", err)
-    // })
 
     // data.currentgroupdata = <GroupList>{
     //     GroupInfo: <GroupInfo>{},
@@ -1176,15 +1198,15 @@ const searchgroup = () => {
 
     searchGroupapi(data.addgroupdata.addgroupinput).then((res) => {
         if (res.status != 200) {
-            tip("error", res.data.msg)
+            tip("error", "搜索成功")
             return
         }
         console.log(res.data.grouplist);
 
         data.addgroupdata.addgroupsearchlist = res.data.grouplist == null ? [] : res.data.grouplist
 
-    }).catch(err => {
-        tip("error", err.response.data.msg)
+    }).catch(() => {
+        tip("error", "搜索失败,请稍后重试")
     })
 }
 
@@ -1192,11 +1214,11 @@ const searchgroup = () => {
 const handleapplymsg = (apply: ApplyItem, status: number) => {
     joingroupapi(apply.ID, status).then(res => {
         console.log(res.data);
-        tip("success", res.data.msg)
+        tip("success", "操作成功")
         apply.HandleStatus = status
     }).catch(error => {
         console.log(error);
-        tip("error", error.response.data.msg)
+        tip("error", "操作失败,请稍后重试")
     })
 }
 
@@ -1204,10 +1226,12 @@ const handleapplymsg = (apply: ApplyItem, status: number) => {
 const handleapplyaddusermsg = (apply: ApplyUserItem, status: number) => {
     apply.HandleStatus = status
     adduserapi(apply.ID, status).then(res => {
-        tip("success", res.data.msg)
+        if (res.status = 200) {
+            tip("success", "操作成功")
+        }
     }).catch(err => {
         console.log(err);
-        tip("error", err.response.data.msg)
+        tip("error", "操作失败,请稍后重试")
     })
 }
 

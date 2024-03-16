@@ -8,9 +8,13 @@ let remoteVidoeWindow: BrowserWindow
 
 let PublicNotification: Notification
 
+let tray:Tray
+
+let mainWindow:BrowserWindow
+
 function createWindow(): void {
   // Create the browser window.
-  const mainWindow = new BrowserWindow({
+  mainWindow = new BrowserWindow({
     width: 400,
     height: 550,
     show: false,
@@ -24,11 +28,11 @@ function createWindow(): void {
       preload: join(__dirname, '../preload/index.js'),
       sandbox: false,
       nodeIntegration: true,
-      // devTools: true,
+      devTools: true,
     }
   })
 
-  mainWindow.webContents.openDevTools()
+  // mainWindow.webContents.openDevTools()
 
   function initMainWindow(mainWindow: BrowserWindow) {
     mainWindow.setResizable(true);
@@ -84,42 +88,6 @@ function createWindow(): void {
   ipcMain.on('settitle', () => {
 
     mainWindow.setTitle("Hichat")
-
-    const tray = new Tray(icon)
-    tray.setToolTip('HiChat')
-    tray.on('click', () => {
-      mainWindow.show()
-    })
-
-    tray.on('right-click', () => {
-
-      const trayContextMenu = Menu.buildFromTemplate([
-        {
-          label: '打开主面板',
-          click: () => {
-            mainWindow.show()
-          }
-        }
-        ,
-        {
-          label: '退出',
-          click: () => {
-            if (remoteVidoeWindow) {
-              if (!remoteVidoeWindow.isDestroyed()) {
-                remoteVidoeWindow.close()
-              }
-            }
-            tray.destroy()
-            mainWindow.close()
-          }
-        }
-      ])
-
-
-      tray.popUpContextMenu(trayContextMenu)
-    })
-
-
   })
 
 
@@ -160,7 +128,7 @@ function createWindow(): void {
         sandbox: false
       }
     })
-    remoteVidoeWindow.webContents.openDevTools()
+    // remoteVidoeWindow.webContents.openDevTools()
 
     //引入定义ui的渲染层
     remoteVidoeWindow.loadFile(join(__dirname, '../renderer/nested/index.html'), {
@@ -210,17 +178,53 @@ function createWindow(): void {
   }
 }
 
+function setTray(){
+  tray = new Tray(icon)
+  tray.setToolTip('HiChat')
+  tray.on('click', () => {
+    mainWindow.show()
+  })
+
+  tray.on('right-click', () => {
+    const trayContextMenu = Menu.buildFromTemplate([
+      {
+        label: '打开主面板',
+        click: () => {
+          mainWindow.show()
+        }
+      }
+      ,
+      {
+        label: '退出',
+        click: () => {
+          if (remoteVidoeWindow) {
+            if (!remoteVidoeWindow.isDestroyed()) {
+              remoteVidoeWindow.close()
+            }
+          }
+          tray.destroy()
+          mainWindow.close()
+        }
+      }
+    ])
+
+    tray.popUpContextMenu(trayContextMenu)
+  })
+}
+
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
 app.whenReady().then(() => {
   // Set app user model id for windows
-  electronApp.setAppUserModelId('com.electron')
+  electronApp.setAppUserModelId(' HiChat')
 
   PublicNotification = new Notification({
     title: "",
     body: ""
   })
+
+  setTray()
 
   // Default open or close DevTools by F12 in development
   // and ignore CommandOrControl + R in production.
@@ -230,6 +234,8 @@ app.whenReady().then(() => {
   })
 
   createWindow()
+
+  mainWindow.show()
 
   app.on('activate', function () {
     // On macOS it's common to re-create a window in the app when the
@@ -244,6 +250,7 @@ app.whenReady().then(() => {
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {
     app.quit()
+    tray.destroy()
   }
 })
 

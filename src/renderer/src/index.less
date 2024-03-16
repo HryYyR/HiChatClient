@@ -352,7 +352,12 @@
         display: flex;
         flex-direction: column;
 
-
+        .rightlist_background {
+            font-size: 4rem;
+            margin: auto;
+            color: rgba(0, 0, 0, 0.1);
+            user-select: none;
+        }
 
         .rightlist_option {
             height: 70px;
@@ -366,18 +371,22 @@
             align-items: flex-end;
             padding: 0px 30px 10px 25px;
             border-bottom: 1px solid rgba(0, 0, 0, 0.1);
-            .rightlist_option_tool{
+
+            .rightlist_option_tool {
                 display: flex;
                 justify-content: center;
                 align-items: center;
-                &> *{
+
+                &>* {
                     margin: 0px 10px;
                     font-size: 1.5rem;
-                    &:hover{
+
+                    &:hover {
                         color: rgb(0, 153, 255);
                     }
                 }
             }
+
             // border-bottom: 1px solid rgba(0, 0, 0, 0.1);
         }
 
