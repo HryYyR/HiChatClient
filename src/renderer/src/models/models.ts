@@ -125,3 +125,15 @@ export type AckMsg = {
     UserId :number
     MsgSort:number
 }
+
+export type UserShowData = {
+    ID: number
+    NikeName: string
+    UserName: string
+    Email: string
+    CreatedAt: string
+    Avatar: string
+    Age: number,
+    City: string,
+    Introduce : string,
+}

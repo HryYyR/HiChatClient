@@ -1,5 +1,5 @@
 <template>
-    <el-dialog :before-close="beforeCloseAddUserEvent" v-model="data.addUserDialogVisible" title="添加好友" width="40%">
+    <el-dialog  :before-close="beforeCloseAddUserEvent" v-model="data.addUserDialogVisible" title="添加好友" width="40%">
         <div class="add_user_dialog_container">
             <div>
                 <img :src="`http://${fileurl}/${targetuserdata.Avatar}`" alt="">

@@ -4,25 +4,34 @@
 
         <div class=" user_detail_dialog_option">
             <div>
-                <img v-if="props.userdata.UserAvatar" :src="`http://${fileurl}/${props.userdata.UserAvatar}`" alt="">
+                <img v-if="props.userdata.Avatar" :src="`http://${fileurl}/${props.userdata.Avatar}`" alt="">
             </div>
             <div style="margin: 0 20px;">
-                <p class="user_detail_dialog_option_name">{{ props.userdata.UserName }} {{isfriend?"(好友)":""}} </p>
-                <p class="user_detail_dialog_option_id">ID: {{ props.userdata.UserID }}</p>
+                <p class="user_detail_dialog_option_name">{{ props.userdata.NikeName }} {{isfriend?"(好友)":""}} </p>
+                <p class="user_detail_dialog_option_id">ID: {{ props.userdata.ID }}</p>
             </div>
 
         </div>
         <div  class="user_detail_item " >
-            <div>年龄:</div> <p>{{ props.userdata.UserAge }}</p>
+            <div>年龄:</div> <p>{{ props.userdata.Age || "未知" }}</p>
         </div>
         <div class="user_detail_item ">
-            <div>城市: </div> <p>{{ props.userdata.UserCity }}</p>
+            <div>城市: </div> <p>{{ props.userdata.City||"未知" }}</p>
+        </div>
+        <div class="user_detail_item ">
+            <div>个人简介:</div> <p> {{ props.userdata.Introduce || "无" }}</p>
+        </div>
+        <div class="user_detail_item ">
+            <div>邮箱:</div> <p> {{ props.userdata.Email }}</p>
         </div>
         <div class="user_detail_item ">
             <div>注册时间:</div> <p> {{ data.createdAt }}</p>
         </div>
         <div class="change_tochat" v-show="isfriend" @click="emit('setcurrentfriendlist',friendinfodata)">
             <p>发消息</p>
+        </div>
+        <div class="change_tochat" v-show="!isfriend" @click="emit('addusertofriend',userdata)">
+            <p>添加好友</p>
         </div>
 
     </el-dialog>
@@ -31,9 +40,9 @@
 <script setup lang="ts">
 import { PropType, reactive, watch } from 'vue';
 import { fileurl } from '../../main'
-import { MessageListitem,Friend } from '../../models/models'
+import { UserShowData,Friend } from '../../models/models'
 
-const emit = defineEmits(['handlelookuserinfodialog','setcurrentfriendlist'])
+const emit = defineEmits(['handlelookuserinfodialog','setcurrentfriendlist','addusertofriend'])
 const data = reactive({
     visible: false,
     createdAt:""
@@ -43,7 +52,7 @@ const data = reactive({
 
 const props = defineProps({
     userdata: {
-        type: Object as PropType<MessageListitem>,
+        type: Object as PropType<UserShowData>,
         required: true,
     },
     UserDetailDialogVisible: {

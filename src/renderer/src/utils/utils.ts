@@ -26,7 +26,7 @@ export function nowtime() {
     return text
 }
 
-export function tip(type: any, message: string) {
+export function tip(type: 'error'|'success'|'warning'|'info', message: string) {
     ElMessage({
         "type": type,
         "message": message

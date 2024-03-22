@@ -4,7 +4,7 @@
         <MessageTimeVue :time="item.CreatedAt" :pretime="preitem.CreatedAt" />
         <!-- 左头像 -->
         <div class="msg_header" @contextmenu.prevent.stop="openHeaderHandleMenu($event, item)"
-            @click="emit('lookuserinfo', item)"
+            @click="emit('lookuserinfo', item.UserID)"
             v-if="item.UserID != props.userdata.ID && (item.MsgType == 1 || item.MsgType == 2 || item.MsgType == 3)">
             <img :src="`http://${fileurl}/${item.UserAvatar}`" alt="">
         </div>
@@ -13,7 +13,8 @@
         <pre style="text-wrap: wrap;" v-if="item.MsgType == 1 || item.MsgType == 2 || item.MsgType == 3" class="msg_text"
             :style="{ alignItems: item.UserID == props.userdata.ID ? 'flex-end' : 'flex-start' }">
 
-        <p>{{ item.UserName }}</p>
+            <!-- 名称 -->
+        <p style="display:flex;"><p>{{ item.UserName }}</p> <p class="creater" v-if="item.UserID==currentgroupdata.GroupInfo.CreaterID"> 群主</p></p>
 
         <el-image
         class="msg_info" 
@@ -42,8 +43,6 @@
 
         </pre>
 
-
-
         <!-- 右头像 -->
         <div class="msg_header"
             v-if="item.UserID == props.userdata.ID && (item.MsgType == 1 || item.MsgType == 2 || item.MsgType == 3)"
@@ -66,7 +65,7 @@ import { fileurl } from '../../main'
 import MessageTimeVue from './messagetime/message_time.vue'
 import { ElMessage } from 'element-plus';
 import { PropType } from 'vue';
-import { MessageListitem } from '@renderer/models/models';
+import { MessageListitem,GroupList } from '@renderer/models/models';
 const emit = defineEmits(['openMsgHandleMenu', 'changeHeaderDialog', 'lookuserinfo'])
 let props = defineProps({
     item: {
@@ -79,7 +78,7 @@ let props = defineProps({
 
     },
     currentgroupdata: {
-        type: Object,
+        type: Object as PropType<GroupList>,
         required: true,
     },
     userdata: {

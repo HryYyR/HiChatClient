@@ -221,7 +221,8 @@ app.whenReady().then(() => {
 
   PublicNotification = new Notification({
     title: "",
-    body: ""
+    body: "",
+    silent:true,
   })
 
   setTray()

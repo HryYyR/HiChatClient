@@ -1,0 +1,147 @@
+.moregroupinfodrawerdetail {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    user-select: none;
+}
+
+.modal {
+    background-color: rgb(231, 231, 231);
+    padding: 5px 20px;
+    border-radius: 10px;
+    margin: 0 0 30px 0;
+}
+
+.group_inf {
+    width: 85%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+
+    & span:nth-child(2) {
+        color: rgb(0,153,255);
+
+    }
+
+    .copybtn {
+        transition: 0.2s;
+
+        :hover {
+            color: rgb(0,153,255);
+
+        }
+    }
+}
+
+.member_list {
+    width: 85%;
+    display: flex;
+    flex-direction: column;
+    color: rgba(0, 0, 0, 1);
+
+    .member_list_title {
+        font-size: 1rem;
+        margin-bottom: 10px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        cursor: pointer;
+        &:hover {
+            .moremember_btn {
+                color: rgb(0,153,255);
+            }
+        }
+        p {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+       
+    }
+
+    .member_list_body {
+
+        display: flex;
+        flex-wrap: wrap;
+
+        .member_list_item {
+            margin: 5px 5px;
+            width: 45px;
+            cursor: pointer;
+            &:hover {
+                *{
+                    color: rgb(0,153,255);
+                }
+            }
+            img {
+                width: 45px;
+                height: 45px;
+                border-radius: 50%;
+            }
+
+            p {
+                text-align: center;
+                font-size: 0.8rem;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                color: rgba(0, 0, 0, 0.8);
+            }
+
+        }
+    }
+
+}
+
+.memberdetail {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+
+    .memberdetail_item {
+        display: flex;
+        align-items: center;
+        border-radius: 5px;
+        margin: 3px 0;
+        cursor: pointer;
+        &:hover {
+            background-color: rgba(0, 0, 0, 0.1);
+        }
+        height: 60px;
+        img {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            margin-left: 5px;
+        }
+        p {
+            margin-left: 10px;
+            width: 220px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .groupcreater{
+            width: 50px;
+            background-color: rgb(0,153,255);
+            color: white;
+            border-radius: 3px;
+            padding: 1px 3px;
+            font-size: 0.9rem;
+            text-align: center;
+            margin-right: 10px;
+        }
+    }
+}
+
+.green{
+    color: rgb(19, 207, 144) !important;
+}
+.greenbg{
+    background-color: rgb(19, 207, 144) !important;
+}
+.blue{
+    color: rgb(0,153,255) !important;
+}

@@ -141,7 +141,7 @@
 
         <div class="right_list">
 
-            <p v-if="data.currentSelectType ==0" class="rightlist_background">HiChat</p>
+            <p v-if="data.currentSelectType == 0" class="rightlist_background">HiChat</p>
 
             <!-- friend标题栏 -->
             <div class="rightlist_option"
@@ -178,9 +178,23 @@
             <!-- group标题栏 -->
             <div class="rightlist_option"
                 v-if="data.currentSelectType == 1 && JSON.stringify(data.currentgroupdata) != '{}'">
-                {{ JSON.stringify(data.currentgroupdata) != '{}' ? data.currentgroupdata.GroupInfo.GroupName : "" }} ({{
-                    JSON.stringify(data.currentgroupdata) != '{}' ? data.currentgroupdata.GroupInfo.MemberCount : '' }})
+                <p>
+                    {{ JSON.stringify(data.currentgroupdata) != '{}' ? data.currentgroupdata.GroupInfo.GroupName : "" }} ({{
+                        JSON.stringify(data.currentgroupdata) != '{}' ? data.currentgroupdata.GroupInfo.MemberCount : '' }})</p>
+                <el-icon class="moregroupinfo" @click="changemoregroupinfodarwer">
+                    <MoreFilled />
+                </el-icon>
             </div>
+
+            <!-- 群聊详细信息 -->
+            <el-drawer v-model="data.moregroupinfo.moregroupinfodrawer"
+                :title="data.currentgroupdata.GroupInfo ? data.currentgroupdata.GroupInfo.GroupName : ''" direction="rtl"
+                size="300px" append-to-body>
+                <MoreGroupInfoDrawerDetail :groupinfo="data.currentgroupdata"
+                    :memberlistdetaildarwer="data.moregroupinfo.memberlistdetaildarwer" :userid="data.userdata.ID"
+                    :memberlistdata="data.moregroupinfo.memberlistdata" @changequitgroupdialog="changequitgroupdialog"
+                    @lookuserinfo="lookuserinfo" @changememberlistdetaildarwer="changememberlistdetaildarwer" />
+            </el-drawer>
 
 
             <!-- group消息列表 -->
@@ -285,7 +299,7 @@
         <UserDetailDialog :UserDetailDialogVisible="data.userinfodata.UserDetailDialogVisible"
             :userdata="data.userinfodata.userdata" :friendinfodata="data.userinfodata.friendinfodata"
             :isfriend="CurrentCheckUserIsFriend" @handlelookuserinfodialog="handlelookuserinfodialog"
-            @setcurrentfriendlist="setcurrentfriendlist" />
+            @setcurrentfriendlist="setcurrentfriendlist" @addusertofriend="addusertofriend" />
 
         <!-- 搜索好友对话框 -->
         <SearchFriendDialog :searchinput="data.searchfrienddata.searchinput" :friendlist="data.searchfrienddata.friendlist"
@@ -298,6 +312,8 @@
 
 <script setup lang="ts">
 // const { ipcRenderer } = require('electron')
+
+
 import { fileurl, wsurl } from './main'
 import { toRef, onMounted, reactive, ref, watch, computed } from 'vue';
 import useCounter from './store/common'
@@ -317,8 +333,9 @@ import CreateGroupDialog from './components/creategroupdialog/create_group_dialo
 import MessageNoticeDialog from './components/messagenoticedialog/message_notice_dialog.vue'
 import ApplyJoinGroupDialog from './components/applyjoingroupdialog/apply_join_group_dialog.vue'
 import ApplyAddUserDialog from './components/adduserdialog/add_user_dialog.vue'
-import UserDetailDialog from './components/userdetaildialog/user_detail_dialog.vue';
+import UserDetailDialog from './components/userdetaildialog/user_detail_dialog.vue'
 import SearchFriendDialog from './components/searchfrienddialog/search_friend_dialog.vue'
+import MoreGroupInfoDrawerDetail from './components/moregroupinfodrawerdetail/moregroupinfodrawerdetail.vue'
 
 import {
     loginapi,
@@ -337,7 +354,9 @@ import {
     exitgroupapi,
 
     adduserapi,
+    getuserdataapi,
     getgusermessagelist,
+    getgroupmemberlist,
 
     emailcodeapi,
     uploadresourceapi,
@@ -346,7 +365,7 @@ import {
     getgroupmessagelist,
     getimgorigindataapi,
     startusertouservideocall,
-    
+
 } from './API/api'
 
 import {
@@ -359,6 +378,7 @@ import {
     MessageListitem,
     Friend,
     FriendMessageListitem,
+    UserShowData,
 } from './models/models'
 
 
@@ -470,7 +490,7 @@ const data = reactive({
     },
     userinfodata: { //点击查看别人的用户资料时
         UserDetailDialogVisible: false,
-        userdata: <MessageListitem>{},  //该用户的消息数据
+        userdata: <UserShowData>{},  //该用户的消息数据
         friendinfodata: <Friend>{}  //如果是好友,为好友数据
     },
     searchfrienddata: {
@@ -478,7 +498,13 @@ const data = reactive({
         friendlist: [] as Array<Friend>,
         visible: false,
         targetfrienddata: <Friend>{}
+    },
+    moregroupinfo: {
+        moregroupinfodrawer: false,
+        memberlistdetaildarwer: false,
+        memberlistdata: [] as Array<UserShowData>
     }
+
 
 })
 
@@ -532,7 +558,7 @@ const allfriendmsgnum = computed(() => {
 })
 
 const CurrentCheckUserIsFriend = computed(() => {
-    return data.userdata?.FriendList?.filter(f => f.Id == data.userinfodata.userdata.UserID).length != 0
+    return data.userdata?.FriendList?.filter(f => f.Id == data.userinfodata.userdata.ID).length != 0
 })
 
 const filterapplyjoingrouplist = computed(() => data.userdata.ApplyList ? data.userdata.ApplyList.filter(i => i.HandleStatus == 0 && i.ApplyUserID != data.userdata.ID).length : 0)
@@ -599,7 +625,7 @@ const setcurrentlistener = () => {
 
         if (data.currentSelectType == 2) {
             data.loadingmsaageburial = false
-            getgusermessagelist((data.currentfrienddata.Id),data.currentfrienddata.MessageList.length).then(res=>{
+            getgusermessagelist((data.currentfrienddata.Id), data.currentfrienddata.MessageList.length).then(res => {
                 if (res.data.data != null && res.data.data.length != 0) {
                     data.userdata.FriendList.map(f => {
                         if (f.Id == data.currentfrienddata.Id) {
@@ -658,6 +684,10 @@ const setcurrentfriendlist = (frienddata: Friend) => {
     if (data.currentfrienddata.Id == frienddata.Id) {
         return
     }
+
+    data.moregroupinfo.moregroupinfodrawer = false
+    data.moregroupinfo.memberlistdetaildarwer = false
+
     data.loadingmessagelist = true
     data.loadingmsaageburial = true //在滚动到顶部时,是否开启监听,获取消息
     data.currentfrienddata = frienddata
@@ -1122,8 +1152,8 @@ const applyentergroup = async () => {
         console.log(res);
         tip("success", "申请成功")
         refreshgroupnoticedata()
-    }).catch(() => {
-        tip("error", "申请失败,请稍后重试")
+    }).catch(err => {
+        tip("error", err.response.data.msg)
     })
     data.addgroupdata.addgroupinput = ""
     data.applyjoingroupdata.Msg = ""
@@ -1161,6 +1191,13 @@ const changestep = (i: number) => {
     i == 0 ? (data.creategroupdata.createstep--) : (data.creategroupdata.createstep++)
 }
 
+// 切换退出群聊对话框的显示
+const changequitgroupdialog = (item: GroupList) => {
+    data.quitgroupdata.title = item.GroupInfo.CreaterID == data.userdata.ID ? "解散群聊" : "退出群聊"
+    data.quitgroupdata.targetgroupdata = item
+    data.quitgroupdata.quitGroupDialogVisible = true
+}
+
 // 退出群聊
 const quitgroup = async () => {
     const GroupInfo = data.quitgroupdata.targetgroupdata.GroupInfo
@@ -1168,6 +1205,7 @@ const quitgroup = async () => {
 
     exitgroupapi(GroupInfo.ID).then(() => {
         data.quitgroupdata.quitGroupDialogVisible = false
+        data.moregroupinfo.moregroupinfodrawer = false
         if (JSON.stringify(data.currentgroupdata) != '{}') {
             if (data.currentgroupdata.GroupInfo.ID == GroupInfo.ID) {
                 data.currentSelectType = 0
@@ -1243,17 +1281,23 @@ const openeditgroupmenu = (e: any, item: GroupList) => {
             y: e.clientY,
             items: [
                 {
-                    label: item.GroupInfo.CreaterID == data.userdata.ID ? "解散群聊" : "退出群聊",
+                    label: "详细信息",
                     onClick: () => {
-                        data.quitgroupdata.title = item.GroupInfo.CreaterID == data.userdata.ID ? "解散群聊" : "退出群聊"
-                        data.quitgroupdata.targetgroupdata = item
-                        data.quitgroupdata.quitGroupDialogVisible = true
+                        setcurrentgrouplist(item)
+                        changemoregroupinfodarwer()
                     }
-                }, {
+                },
+                {
                     label: "复制群号",
                     onClick: () => {
                         navigator.clipboard.writeText(item.GroupInfo.ID.toString())
                         tip("success", "复制成功!")
+                    }
+                },
+                {
+                    label: item.GroupInfo.CreaterID == data.userdata.ID ? "解散群聊" : "退出群聊",
+                    onClick: () => {
+                        changequitgroupdialog(item)
                     }
                 }
             ]
@@ -1500,7 +1544,7 @@ const connectws = () => {
     }
 }
 
-// 打开用户详情对话框
+// 打开自己的用户详情对话框
 const userdetaildialoghandleClose = () => {
     data.userdetaildata.UserDetailDialogVisible = !data.userdetaildata.UserDetailDialogVisible
 }
@@ -1518,6 +1562,29 @@ const changeHeaderDialog = (item: Userdata = <Userdata>{}) => {
     data.addUserdata.addUserDialogVisible = !data.addUserdata.addUserDialogVisible
 }
 
+// 在群聊中点击其他用户头像里点击 "添加好友" 时触发
+const addusertofriend = (usermsgdata: UserShowData) => {
+    const userdata: Userdata = {
+        ID: usermsgdata.ID,
+        NikeName: usermsgdata.UserName,
+        UserName: usermsgdata.UserName,
+        CreatedTime: usermsgdata.CreatedAt,
+        Avatar: usermsgdata.Avatar,
+        Age: usermsgdata.Age,
+        City: usermsgdata.City,
+        Introduce: "",
+        Email: '',
+        LoginTime: '',
+        GroupList: [],
+        ApplyList: [],
+        ApplyUserList: [],
+        FriendList: []
+    }
+    data.userdetaildata.UserDetailDialogVisible =false
+    changeHeaderDialog(userdata)
+}
+
+
 // 关闭创建群聊对话框
 const closecreategroupdialog = () => {
     data.creategroupdata.createstep = 1
@@ -1526,18 +1593,32 @@ const closecreategroupdialog = () => {
     data.creategroupdata.createGroupDialogVisible = false
 }
 
-// 点击查看资料时触发
-const lookuserinfo = (item: MessageListitem) => {
-    data.userinfodata.userdata = item
-    if (CurrentCheckUserIsFriend) {
-        data.userinfodata.friendinfodata = data.userdata.FriendList.filter(f => f.Id == item.UserID)[0] || <Friend>{}
+// 点击群聊信息里的,群成员查看资料时触发
+const lookuserinfo = (userid: number) => {
+    if (userid == data.userdata.ID) {
+        data.userdetaildata.UserDetailDialogVisible=true
+        return
     }
-    data.userinfodata.UserDetailDialogVisible = true
+
+    getuserdataapi(userid).then(res => {
+        if (res.status != 200) {
+            tip('error', "获取信息失败,请稍后重试!")
+            return
+        }
+        data.userinfodata.userdata = res.data.data
+        if (CurrentCheckUserIsFriend) {
+            data.userinfodata.friendinfodata = data.userdata.FriendList.filter(f => f.Id == userid)[0] || <Friend>{}
+        }
+        data.userinfodata.UserDetailDialogVisible = true
+    }).catch(() => {
+        tip('error', "获取信息失败,请稍后重试!")
+    })
+
 }
 
 // 切换查看资料的对话框
 const handlelookuserinfodialog = (visible: boolean) => {
-    data.userinfodata.userdata = <MessageListitem>{}
+    data.userinfodata.userdata = <UserShowData>{}
     data.userinfodata.UserDetailDialogVisible = visible
 }
 
@@ -1618,6 +1699,32 @@ const startUserToUserVideoCall = async () => {
     })
 
 }
+
+// 切换群聊详情里,成员列表的显示
+const changememberlistdetaildarwer = () => {
+    data.moregroupinfo.memberlistdetaildarwer = !data.moregroupinfo.memberlistdetaildarwer
+}
+
+// 切换群聊详情里,成员列表的显示
+const changemoregroupinfodarwer = () => {
+    getmoregroupinfo()
+    data.moregroupinfo.moregroupinfodrawer = !data.moregroupinfo.moregroupinfodrawer
+}
+
+// 获取群聊成员信息
+const getmoregroupinfo = () => {
+    getgroupmemberlist(data.currentgroupdata.GroupInfo.ID).then(res => {
+        console.log(res);
+        if (res.status != 200) {
+            tip('error', "获取群成员列表失败!")
+            return
+        }
+        data.moregroupinfo.memberlistdata = res.data.data
+    }).catch(() => {
+        tip('error', "获取群成员列表失败!")
+    })
+}
+
 
 export type GroupInfo = {
     Avatar: string

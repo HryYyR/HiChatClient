@@ -240,6 +240,19 @@ export function searchfriendapi(str: string) {
     })
 }
 
+// 获取用户之间的消息列表
+export function getgusermessagelist(targetuserid:number, currentnum: Number) {
+    let msg = {
+        targetuserid: targetuserid,
+        currentnum: currentnum
+    }
+    return axios({
+        url: apistaticurl + "/user/getusermessagelist",
+        method: "POST",
+        data: msg,
+    })
+}
+
 // 获取指定群聊消息列表
 export function getgroupmessagelist(groupid: Number, currentnum: Number) {
     let msg = {
@@ -253,14 +266,13 @@ export function getgroupmessagelist(groupid: Number, currentnum: Number) {
     })
 }
 
-// 获取用户之间的消息列表
-export function getgusermessagelist(targetuserid:number, currentnum: Number) {
+// 获取指定群聊的成员信息
+export function getgroupmemberlist(groupid: Number) {
     let msg = {
-        targetuserid: targetuserid,
-        currentnum: currentnum
+        groupid: groupid,
     }
     return axios({
-        url: apistaticurl + "/user/getusermessagelist",
+        url: apistaticurl + "/group/getgroupmemberdata",
         method: "POST",
         data: msg,
     })
