@@ -313,15 +313,24 @@
 <script setup lang="ts">
 // const { ipcRenderer } = require('electron')
 
-
+import JSEncrypt from 'jsencrypt'
 import { fileurl, wsurl } from './main'
 import { toRef, onMounted, reactive, ref, watch, computed } from 'vue';
 import useCounter from './store/common'
 import { UploadFile, UploadFiles, UploadProps, UploadRawFile } from 'element-plus';
-import { tip, SendGroupResourceMsg, SendFriendResourceMsg, RegSearch, MatchingItem } from './utils/utils'
+import {
+    encryptAes,
+    decryptAes,
+    arrayToBase64,
+    generateAndStoreKey,
+    tip,
+    SendGroupResourceMsg,
+    SendFriendResourceMsg,
+    RegSearch,
+    MatchingItem
+} from './utils/utils'
 import HeaderVue from './components/header.vue'
 import LoginVue from './components/login/login.vue'
-
 
 import UserInfoVue from './components/userinfo/userinfo.vue'
 import GroupItemVue from './components/groupitem/groupitem.vue'
@@ -386,6 +395,7 @@ import ContextMenu from '@imengyu/vue3-context-menu'
 
 const win: any = window
 let Store = useCounter()
+const keyPair = new JSEncrypt()
 
 const msglist: any = ref(null)
 const uploadimg: any = ref(null)
@@ -409,6 +419,12 @@ const data = reactive({
         wsconn: <any>null,  //ws连接
     },
     wsconnecting: true,
+    wsidentify: {
+        publickey: "",
+        aeskey: <CryptoKey>{},
+        wsmsgindex: 0,
+    },
+    EncryptedSymmetricKey: <Uint8Array>new Uint8Array(),
     // AckFlag: 0,
     islogin: false, //是否登录
     loginloading: false, //是否加载中
@@ -565,8 +581,13 @@ const filterapplyjoingrouplist = computed(() => data.userdata.ApplyList ? data.u
 const filterapplyadduserlist = computed(() => data.userdata.ApplyUserList ? data.userdata.ApplyUserList.filter(i => i.HandleStatus == 0 && i.ApplyUserID != data.userdata.ID).length : 0)
 
 // 发送消息
-const send = () => {
+const send = async () => {
     if (data.input.replace(/ /g, "").length == 0) return
+    if (data.input.length > 1000) {
+        tip('warning', "内容超出文本限制")
+        return
+    }
+    let encryptedData
     if (data.currentSelectType == 1) {
         let message: MessageListitem = {
             UserID: data.userdata.ID,
@@ -582,15 +603,21 @@ const send = () => {
             Context: [],
             CreatedAt: new Date().toISOString()
         }
-        data.ws.wsconn.send(JSON.stringify(message))
+        const msgstr = JSON.stringify(message)
+        encryptedData = await encryptAes(data.wsidentify.aeskey, msgstr)
+        
         scrolltonew(200, true)
     }
     if (data.currentSelectType == 2) {
-        let message: string = SendFriendResourceMsg(data.input, 1001, data.userdata, data.currentfrienddata)
-        data.ws.wsconn.send(message)
+        let msgstr = SendFriendResourceMsg(data.input, 1001, data.userdata, data.currentfrienddata)
+        encryptedData = await encryptAes(data.wsidentify.aeskey, msgstr)
     }
-    // data.AckFlag++
+    // console.log("encryptedData",encryptedData);
+
+    data.ws.wsconn.send(encryptedData)
     data.input = ""
+
+    // data.AckFlag++
     // console.log(msglist);
 }
 
@@ -767,6 +794,8 @@ const outlogin = () => {
     setTimeout(() => {
         data.islogin = false
     }, 50);
+    data.wsidentify.wsmsgindex = 0
+    data.wsidentify.publickey = ""
     data.ws.wsconn.close()
     data.currentgroupdata = <GroupList>{}
     data.currentSelectType = 0
@@ -852,10 +881,10 @@ const handleMsg = (msg: any) => {
             if (friend.Id == msg.UserID || friend.Id == msg.ReceiveUserID) {
                 friend.MessageList.push(msg)
 
+                // 交换位置
                 let temp = data.userdata.FriendList[index]
                 data.userdata.FriendList[index] = data.userdata.FriendList[0]
                 data.userdata.FriendList[0] = temp
-
             }
         })
 
@@ -968,7 +997,7 @@ const handleMsg = (msg: any) => {
 
 
 // 消费消息
-setInterval(() => {
+setInterval( async() => {
     if (TodoMessagequeue.length == 0) {
         return
     }
@@ -980,16 +1009,36 @@ setInterval(() => {
         const innerContent = match[1];
         try {
             // 使用 JSON.parse 将字符串解析成对象
-            const msg = JSON.parse(`{${innerContent}}`);
-            console.log("消费了一条消息", msg);
+            const encryptedData = JSON.parse(`{${innerContent}}`);
+            console.log("未解密消息", encryptedData);
+            const DecryptedMsgStr  = await decryptAes(data.wsidentify.aeskey,encryptedData.Message,encryptedData.Iv)
+            console.log("解密字符", DecryptedMsgStr);
+            const DecryptedMsg = JSON.parse(DecryptedMsgStr);
+            console.log("解密消息", DecryptedMsg);
             // msg.MsgStatus = false
             // setTimeout(() => checkmsgisovertime(msg), 1000);
-            handleMsg(msg)
+            handleMsg(DecryptedMsg)
         } catch (error) {
             console.error('Error parsing JSON:', error);
         }
     }
 }, 100)
+
+// 处理密钥传递消息
+const handlepublickeymsg = async (keymsg: any) => {
+    let publicKey = keymsg.replace("-----BEGIN RSA PUBLIC KEY-----", "")
+        .replace("-----END RSA PUBLIC KEY-----", "")
+        .replace(/\r?\n|\r/g, "");
+    keyPair.setKey(publicKey)
+
+    let aeskey = await window.crypto.subtle.exportKey("raw", data.wsidentify.aeskey)
+    console.log("aeskey", aeskey);
+
+    let aeskeybase64 = arrayToBase64(aeskey)
+    let enkey = keyPair.encrypt(aeskeybase64)
+    data.ws.wsconn.send(enkey)
+}
+
 // const checkmsgisovertime = (msg: any) => {
 //     if (data.AckFlag == 0) {
 //         msg.MsgStatus = true
@@ -1360,15 +1409,15 @@ const initListener = () => {
 
                         let formData = new FormData();
                         formData.append('file', file);
-                        uploadresourceapi(formData).then(res => {
-                            let msg = {}
+                        uploadresourceapi(formData).then(async res => {
+                            let msg = ""
                             if (data.currentSelectType == 1) {
                                 msg = SendGroupResourceMsg(res.data.fileurl, 3, data.userdata, data.currentgroupdata.GroupInfo.ID)
-
                             } else {
                                 msg = SendFriendResourceMsg(res.data.fileurl, 1003, data.userdata, data.currentfrienddata)
                             }
-                            data.ws.wsconn.send(msg)
+                            let encryptedData = await encryptAes(data.wsidentify.aeskey, msg)
+                            data.ws.wsconn.send(encryptedData)
                             scrolltonew(500, true)
                         }).catch(err => {
                             tip('error', err.response.data.msg)
@@ -1455,7 +1504,7 @@ const scrolltonew = (delay: number = 0, smooth: boolean = false) => {
 }
 
 // 清除当前群聊消息
-const clearcurrentgroupmsg = () => {
+const clearcurrentgroupmsg = async () => {
     let message = {
         UserID: data.userdata.ID,
         UserName: data.userdata.UserName,
@@ -1463,13 +1512,15 @@ const clearcurrentgroupmsg = () => {
         MsgType: 401,
         CreatedAt: new Date()
     }
-    data.ws.wsconn.send(JSON.stringify(message))
+    let encryptedData = await encryptAes(data.wsidentify.aeskey, JSON.stringify(message))
+    data.ws.wsconn.send(encryptedData)
 }
 
 // 清除当前好友消息
-const clearcurrentfriendmsg = () => {
+const clearcurrentfriendmsg = async () => {
     let message = SendFriendResourceMsg("", 1401, data.userdata, data.currentfrienddata)
-    data.ws.wsconn.send(message)
+    let encryptedData = await encryptAes(data.wsidentify.aeskey, message)
+    data.ws.wsconn.send(encryptedData)
 }
 
 // 上传图片之前
@@ -1477,18 +1528,17 @@ const beforeUploadImg = (rawFile: UploadRawFile) => {
     console.log(rawFile);
 }
 // 上传图片成功
-const onSuccessUploadImg = (response: any, uploadFile: any) => {
+const onSuccessUploadImg = async (response: any, uploadFile: any) => {
     console.log(response, uploadFile);
     uploadimg.value.clearFiles(["success"])
-    let msg = ""
+    let msg
     if (data.currentSelectType == 1) {
         msg = SendGroupResourceMsg(uploadFile.response.fileurl, 2, data.userdata, data.currentgroupdata.GroupInfo.ID)
-
     } else if (data.currentSelectType == 2) {
         msg = SendFriendResourceMsg(uploadFile.response.fileurl, 1002, data.userdata, data.currentfrienddata)
-
     }
-    data.ws.wsconn.send(msg)
+    let encryptedData = await encryptAes(data.wsidentify.aeskey, msg)
+    data.ws.wsconn.send(encryptedData)
     scrolltonew(500, true)
 
 }
@@ -1502,17 +1552,26 @@ const onErrorUploadImg = (response: any, uploadFile: UploadFile, uploadFiles: Up
 
 const TodoMessagequeue: Array<string> = []
 // 连接ws
-const connectws = () => {
+const connectws = async () => {
+    data.wsidentify.aeskey = await generateAndStoreKey()
+    const token = localStorage.getItem("token") || ""
     // 连接ws
-    data.ws.wsconn = new WebSocket(`ws://${wsurl}/ws?token=${localStorage.getItem("token")}`),
+    data.ws.wsconn = new WebSocket(`ws://${wsurl}/ws?token=${token}`),
 
         data.ws.wsconn.onopen = function () {
             console.log("connect success!");
             data.wsconnecting = false
             reconnectnum = 0
         }
+
     data.ws.wsconn.onclose = function (evt: any) {
         data.wsconnecting = true
+        data.wsidentify = {
+            publickey: "string",
+            wsmsgindex: 0,
+            aeskey: <CryptoKey>{}
+        }
+
         // console.log(evt);
         console.log("connect close!");
 
@@ -1533,6 +1592,12 @@ const connectws = () => {
     }
     // 接收消息 
     data.ws.wsconn.onmessage = function (evt: any) {
+        if (data.wsidentify.wsmsgindex == 0) {
+            handlepublickeymsg(evt.data)
+            data.wsidentify.wsmsgindex++
+            return
+        }
+        data.wsidentify.wsmsgindex++
         var msgstr = evt.data.split('\n');
         setTimeout(() => {
             TodoMessagequeue.push(msgstr)
@@ -1580,7 +1645,7 @@ const addusertofriend = (usermsgdata: UserShowData) => {
         ApplyUserList: [],
         FriendList: []
     }
-    data.userdetaildata.UserDetailDialogVisible =false
+    data.userdetaildata.UserDetailDialogVisible = false
     changeHeaderDialog(userdata)
 }
 
@@ -1596,7 +1661,7 @@ const closecreategroupdialog = () => {
 // 点击群聊信息里的,群成员查看资料时触发
 const lookuserinfo = (userid: number) => {
     if (userid == data.userdata.ID) {
-        data.userdetaildata.UserDetailDialogVisible=true
+        data.userdetaildata.UserDetailDialogVisible = true
         return
     }
 

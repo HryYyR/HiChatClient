@@ -32,7 +32,7 @@ function createWindow(): void {
     }
   })
 
-  // mainWindow.webContents.openDevTools()
+  mainWindow.webContents.openDevTools()
 
   function initMainWindow(mainWindow: BrowserWindow) {
     mainWindow.setResizable(true);
