@@ -1,5 +1,5 @@
 <template>
-    <el-dialog class="user_detail_dialog" :modal="false" v-model="data.visible" title="" width="40%" :show-close="false"
+    <el-dialog class="user_detail_dialog" :modal="false" v-model="data.visible" title="" width="50%" :show-close="false"
         :before-close="beforeCloseEvent">
 
         <div class=" user_detail_dialog_option">

@@ -49,7 +49,7 @@
                 <div v-for="(item) in data.memberlist" @click="emit('lookuserinfo', item.ID)" :key="item.ID"
                     class="memberdetail_item">
                     <img :src="`http://${fileurl}/${item.Avatar}`" alt="">
-                    <p :class="{ green: item.ID == props.userid, blue: item.ID == props.groupinfo.GroupInfo.CreaterID }"> {{
+                    <p :class="{ green: item.ID == props.userid, blue: item.ID == props.groupinfo?.GroupInfo?.CreaterID }"> {{
                         item.NikeName }}</p>
                     <p class="groupcreater" v-if="item.ID == groupinfo.GroupInfo?.CreaterID">群主</p>
                     <p class="groupcreater greenbg" v-if="item.ID == props.userid">自己</p>

@@ -116,7 +116,6 @@ function createWindow(): void {
     remoteVidoeWindow = new BrowserWindow({
       width: 620,
       height: 465,
-      resizable: false, //禁止改变主窗口尺寸
       frame: false,
       autoHideMenuBar: true,
       title: "视频通话",
@@ -128,7 +127,8 @@ function createWindow(): void {
         sandbox: false
       }
     })
-    // remoteVidoeWindow.webContents.openDevTools()
+    remoteVidoeWindow.setMinimumSize(550, 400);
+    remoteVidoeWindow.webContents.openDevTools()
 
     //引入定义ui的渲染层
     remoteVidoeWindow.loadFile(join(__dirname, '../renderer/nested/index.html'), {
@@ -141,7 +141,6 @@ function createWindow(): void {
     //当监听到窗口被关闭
     remoteVidoeWindow.on('close', () => {
       //清空内存，避免溢出
-      remoteVidoeWindow.close()
     })
   })
 

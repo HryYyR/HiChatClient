@@ -83,7 +83,7 @@
         align-items: center;
         position: absolute;
         bottom: 20px;
-        display: none;
+        display: flex;
         cursor: pointer;
     }
 
@@ -132,7 +132,6 @@
         <audio id="remoteAudio" class="remoteAudio" autoplay></audio>
         <div class="localVideo_context" id="localvideocontext">
             <video id="localVideo" class="localVideo" autoplay></video>
-
         </div>
     </div>
     <script>
@@ -142,7 +141,8 @@
 
         // localhost
         // 192.168.137.1
-        const ws = new WebSocket('ws://localhost:3009/ws?id=' + userid)
+        // const ws = new WebSocket('ws://localhost:3009/ws?id=' + userid)
+        const ws = new WebSocket('ws://192.168.137.1:3009/ws?id=' + userid)
         ws.binaryType = "arraybuffer";
 
         const remoteVideo = document.querySelector('#remoteVideo');
@@ -155,16 +155,17 @@
         const dealwithcalldom = document.querySelector('.dealwithcall');
         const disconnectdom = document.querySelector('.disconnect');
 
-
         const refusebtn = document.getElementById('refusebtn');
         // 点击拒绝按钮
         refusebtn.onclick = () => {
+            ws.close()
             window.electron.ipcRenderer.send('closeRemoteVideo')
         }
 
         const disconnectbtn = document.querySelector('.disconnectbtn');
         // 点击挂断按钮
         disconnectbtn.onclick = () => {
+            ws.close()
             window.electron.ipcRenderer.send('closeRemoteVideo')
         }
 
@@ -173,8 +174,8 @@
             init()
         } else {
             waitinfodom.style.display = 'none';
+            disconnectbtn.style.display = 'none';
         }
-
 
         startScreenSharingButton.onclick = () => {
             init();
@@ -191,6 +192,7 @@
             }).then(playVideo).catch(e => {
                 console.log(e)
                 alert("无可用摄像头")
+                ws.close()
                 window.electron.ipcRenderer.send('closeRemoteVideo')
             })
 
@@ -243,10 +245,18 @@
                 let offer = JSON.parse(jsonstr.sdp)
                 console.log(jsonstr.type);
                 // console.log(jsonstr);
+                if (jsonstr.type === "timeout") {
+                    console.log("time out");
+                    ws.close()
+                    window.electron.ipcRenderer.send('closeRemoteVideo')
+                }
 
                 if (jsonstr.type === "LoginOut") {
+                    ws.close()
                     console.log("close connection");
-                    window.electron.ipcRenderer.send('closeRemoteVideo')
+                    setTimeout(() => {
+                        window.electron.ipcRenderer.send('closeRemoteVideo')
+                    }, 3000);
                 }
 
                 if (jsonstr.type === "offer") {
@@ -289,10 +299,9 @@
                 }
             }
         }
-        ws.onclose = async () => {
+        ws.onclose =  () => {
             window.electron.ipcRenderer.send('closeRemoteVideo')
         }
-
 
         // 交换视频窗口
         localvideocontext.onclick = () => {
@@ -310,7 +319,6 @@
             }
             return result;
         }
-
 
     </script>
 </body>

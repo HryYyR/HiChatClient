@@ -12,10 +12,6 @@ import * as ElementPlusIconsVue from '@element-plus/icons-vue'
 import '@imengyu/vue3-context-menu/lib/vue3-context-menu.css'
 import ContextMenu from '@imengyu/vue3-context-menu'
 
-// export const wsurl = 'hyyyh.top:3004'
-// export const fileurl = 'hyyyh.top:3006'
-// export const staticurl = "hyyyh.top:3005"
-// axios.defaults.baseURL = "http://hyyyh.top:3004"
 
 export const wsurl = "localhost:3004"
 export const fileurl = 'localhost'

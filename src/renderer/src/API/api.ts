@@ -288,3 +288,16 @@ export function getimgorigindataapi(imgurl: string) {
     })
 }
 
+// 获取图片源数据
+export function aimessageapi(msg: string,msgtype:number) {
+    axios.defaults.timeout = 10000
+    return axios({
+        url: apistaticurl + "/user/aimessage",
+        method: "post",
+        data:{
+            msg:msg,
+            msgtype:msgtype
+        }
+    })
+}
+

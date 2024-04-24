@@ -121,7 +121,8 @@
                 <!-- 好友列表 -->
                 <div class="friend_list list" :class="{ checkf: data.currentSelectTab }">
                     <FriendItemVue v-for="(item) in data.userdata.FriendList" :key="item.Id" :item="item"
-                        :currentfrienddata="data.currentfrienddata" @setcurrentfriendlist="setcurrentfriendlist" />
+                        :currentfrienddata="data.currentfrienddata" @setcurrentfriendlist="setcurrentfriendlist"
+                        @lookuserinfo="lookuserinfo" />
                 </div>
                 <!-- 群列表 -->
                 <div class="group_list list" :class="{ checkg: !data.currentSelectTab }">
@@ -130,12 +131,11 @@
                         @openeditgroupmenu="openeditgroupmenu" />
                 </div>
             </div>
-
-
-            <div @click="outlogin" class="outlogin">
-                <el-icon>
-                    <ArrowLeftBold />
-                </el-icon>退出登录
+            <div class="other_tool_group">
+                <div @click="outlogin" class="outlogin">
+                    <QuitIconVue />
+                </div>
+                <div class="Ai_assistant" :username="data.userdata.UserName" :userheader="data.userdata.Avatar" @click="changeAiAssistantDialogVisible">AI</div>
             </div>
         </div>
 
@@ -307,6 +307,10 @@
             @handlesearchfrienddialog="handlesearchfrienddialog" @preapplyaddfriend="preapplyaddfriend"
             @searchfriend="searchfriend" @handlesearchfriendinput="handlesearchfriendinput" />
 
+
+        <AiAssistantDialog :username="data.userdata.UserName" :userheader="data.userdata.Avatar" :aiAssistantDialogVisible="data.aiAssistantDialogData.aiAssistantDialogVisible"
+            @changeAiAssistantDialogVisible="changeAiAssistantDialogVisible" />
+
     </div>
 </template>
 
@@ -317,7 +321,7 @@ import JSEncrypt from 'jsencrypt'
 import { fileurl, wsurl } from './main'
 import { toRef, onMounted, reactive, ref, watch, computed } from 'vue';
 import useCounter from './store/common'
-import { UploadFile, UploadFiles, UploadProps, UploadRawFile } from 'element-plus';
+import { ElMessageBox, UploadFile, UploadFiles, UploadProps, UploadRawFile } from 'element-plus';
 import {
     encryptAes,
     decryptAes,
@@ -327,7 +331,8 @@ import {
     SendGroupResourceMsg,
     SendFriendResourceMsg,
     RegSearch,
-    MatchingItem
+    MatchingItem,
+    convertISOToFormattedString
 } from './utils/utils'
 import HeaderVue from './components/header.vue'
 import LoginVue from './components/login/login.vue'
@@ -345,6 +350,9 @@ import ApplyAddUserDialog from './components/adduserdialog/add_user_dialog.vue'
 import UserDetailDialog from './components/userdetaildialog/user_detail_dialog.vue'
 import SearchFriendDialog from './components/searchfrienddialog/search_friend_dialog.vue'
 import MoreGroupInfoDrawerDetail from './components/moregroupinfodrawerdetail/moregroupinfodrawerdetail.vue'
+import AiAssistantDialog from './components/ai_assistant_dialog/ai_assistant_dialog.vue'
+
+import QuitIconVue from './components/icon-compoment/quit_icon.vue'
 
 import {
     loginapi,
@@ -519,6 +527,10 @@ const data = reactive({
         moregroupinfodrawer: false,
         memberlistdetaildarwer: false,
         memberlistdata: [] as Array<UserShowData>
+    },
+
+    aiAssistantDialogData: {
+        aiAssistantDialogVisible: false
     }
 
 
@@ -605,7 +617,7 @@ const send = async () => {
         }
         const msgstr = JSON.stringify(message)
         encryptedData = await encryptAes(data.wsidentify.aeskey, msgstr)
-        
+
         scrolltonew(200, true)
     }
     if (data.currentSelectType == 2) {
@@ -751,6 +763,9 @@ const login = () => {
             res.data.userdata.GroupList = []
         }
         data.userdata = res.data.userdata
+        // 时间处理
+        data.userdata.LoginTime = data.userdata.LoginTime.slice(0, 19)
+        data.userdata.CreatedTime = convertISOToFormattedString(data.userdata.CreatedTime)
         data.grouplist = res.data.userdata.GroupList.map((group: GroupList) => {
             if (group.MessageList == null) {
                 group.MessageList = []
@@ -789,24 +804,32 @@ const login = () => {
 
 // 退出登录
 const outlogin = () => {
+    ElMessageBox.confirm("确认退出登陆吗?", "退出登陆", {
+        confirmButtonText: '退出',
+        cancelButtonText: '取消',
+    }).then(() => {
+        win.api.backtologin()
+        setTimeout(() => {
+            data.islogin = false
+        }, 50);
+        data.wsidentify.wsmsgindex = 0
+        data.wsidentify.publickey = ""
+        data.ws.wsconn.close()
+        data.currentgroupdata = <GroupList>{}
+        data.currentSelectType = 0
+        data.currentSelectTab = true
+        data.currentfrienddata = <Friend>{}
+        data.input = ""
+        data.searchdata.searchinput = ""
+        data.addgroupdata.addgroupinput = ""
+        data.addgroupdata.addgroupsearchlist = <GroupinfoList>[]
+        data.soundrecorddata.visible = false
+        data.addUserdata.targetUserData = {}
+    }).catch(() => {
+
+    })
     // ipcRenderer.send('backtologin')
-    win.api.backtologin()
-    setTimeout(() => {
-        data.islogin = false
-    }, 50);
-    data.wsidentify.wsmsgindex = 0
-    data.wsidentify.publickey = ""
-    data.ws.wsconn.close()
-    data.currentgroupdata = <GroupList>{}
-    data.currentSelectType = 0
-    data.currentSelectTab = true
-    data.currentfrienddata = <Friend>{}
-    data.input = ""
-    data.searchdata.searchinput = ""
-    data.addgroupdata.addgroupinput = ""
-    data.addgroupdata.addgroupsearchlist = <GroupinfoList>[]
-    data.soundrecorddata.visible = false
-    data.addUserdata.targetUserData = {}
+
 }
 
 
@@ -997,7 +1020,7 @@ const handleMsg = (msg: any) => {
 
 
 // 消费消息
-setInterval( async() => {
+setInterval(async () => {
     if (TodoMessagequeue.length == 0) {
         return
     }
@@ -1010,11 +1033,11 @@ setInterval( async() => {
         try {
             // 使用 JSON.parse 将字符串解析成对象
             const encryptedData = JSON.parse(`{${innerContent}}`);
-            console.log("未解密消息", encryptedData);
-            const DecryptedMsgStr  = await decryptAes(data.wsidentify.aeskey,encryptedData.Message,encryptedData.Iv)
-            console.log("解密字符", DecryptedMsgStr);
+            // console.log("未解密消息", encryptedData);
+            const DecryptedMsgStr = await decryptAes(data.wsidentify.aeskey, encryptedData.Message, encryptedData.Iv)
+            // console.log("解密字符", DecryptedMsgStr);
             const DecryptedMsg = JSON.parse(DecryptedMsgStr);
-            console.log("解密消息", DecryptedMsg);
+            // console.log("解密消息", DecryptedMsg);
             // msg.MsgStatus = false
             // setTimeout(() => checkmsgisovertime(msg), 1000);
             handleMsg(DecryptedMsg)
@@ -1790,6 +1813,9 @@ const getmoregroupinfo = () => {
     })
 }
 
+const changeAiAssistantDialogVisible = ()=>{
+    data.aiAssistantDialogData.aiAssistantDialogVisible = !data.aiAssistantDialogData.aiAssistantDialogVisible
+}
 
 export type GroupInfo = {
     Avatar: string

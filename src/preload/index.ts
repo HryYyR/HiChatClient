@@ -27,8 +27,8 @@ const api: api = {
   closeRemoteVideo: () => {
     ipcRenderer.send('closeRemoteVideo')
   },
-  notification:(title:string,msg:string)=>{
-    ipcRenderer.send('notification',title,msg)
+  notification: (title: string, msg: string) => {
+    ipcRenderer.send('notification', title, msg)
   }
 }
 type api = {
@@ -40,7 +40,7 @@ type api = {
   toClose: Function
   createRemoteVideo: Function
   closeRemoteVideo: Function
-  notification:Function
+  notification: Function
 }
 
 // Use `contextBridge` APIs to expose Electron APIs to

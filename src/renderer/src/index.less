@@ -142,6 +142,7 @@
         display: flex;
         flex-direction: column;
         -webkit-user-drag: drag;
+        user-select: none;
 
         .group_tools {
             height: 60px;
@@ -219,7 +220,7 @@
         }
 
         .apply_msg_list {
-            height: 80px;
+            height: 50px;
             display: flex;
             align-items: center;
             justify-content: space-between;
@@ -229,7 +230,6 @@
             font-weight: 600;
             transition: 0.2s;
             cursor: pointer;
-            user-select: none;
 
             &:hover {
                 background-color: rgb(229, 229, 229);
@@ -267,7 +267,7 @@
             flex-direction: row;
             justify-content: center;
             align-items: center;
-            height: 60px;
+            height: 50px;
 
             & div {
                 display: flex;
@@ -293,8 +293,7 @@
         .list_container {
             overflow: hidden;
             position: relative;
-            height: 100%;
-            margin-bottom: 40px;
+            flex: 1 1 auto;
 
             .list {
                 overflow: auto;
@@ -342,6 +341,59 @@
             }
         }
 
+        .other_tool_group {
+            // background-color: rgb(241, 235, 235);
+            border-top: 1px solid rgb(230, 221, 221);
+            ;
+            width: 100%;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 5px;
+            box-sizing: border-box;
+
+            .outlogin {
+                cursor: pointer;
+                cursor: pointer;
+                user-select: none;
+
+                & svg {
+                    fill: #4a4a4a;
+                    transition: fill 0.3s ease;
+                }
+
+                & svg:hover {
+                    fill: red !important;
+                }
+            }
+
+            .Ai_assistant {
+                font-size: 1.3rem;
+                font-weight: 0;
+                font-family: "华文琥珀";
+                border-radius: 50%;
+                padding: 2px 4px;
+                cursor: pointer;
+                animation: Ai_animate ease-in-out infinite alternate 0.6s;
+                color: rgb(106, 106, 248);
+                border: 3px solid rgb(106, 106, 248);
+            }
+
+            @keyframes Ai_animate {
+                from {
+                    transform: rotate3d(1,0,1,-15deg);
+                }
+
+                to {
+
+                    transform: rotate3d(1,0,1,15deg);
+                }
+            }
+
+        }
+
+
 
     }
 
@@ -371,9 +423,11 @@
             align-items: flex-end;
             padding: 0px 30px 10px 25px;
             border-bottom: 1px solid rgba(0, 0, 0, 0.1);
-            .moregroupinfo{
+
+            .moregroupinfo {
                 transition: 0.2s;
-                &:hover{
+
+                &:hover {
                     color: rgb(0, 153, 255);
                 }
             }
@@ -498,25 +552,6 @@
     color: #8795ff !important;
 }
 
-.outlogin {
-    position: fixed;
-    z-index: 99;
-    bottom: 10px;
-    left: 10px;
-    font-weight: 600;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    cursor: pointer;
-    transition: 0.2s;
-    cursor: pointer;
-    user-select: none;
-
-    &:hover {
-        color: skyblue;
-    }
-}
-
 
 .apply_join_geoup_dialog_grouplist_item {
     margin: 5px 0;
@@ -538,6 +573,6 @@
 }
 
 
-img{
+img {
     -webkit-user-drag: none;
 }

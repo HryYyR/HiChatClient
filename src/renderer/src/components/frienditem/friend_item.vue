@@ -37,7 +37,7 @@ import { PropType } from 'vue'
 import { tip } from "../../utils/utils";
 import  ContextMenu from '@imengyu/vue3-context-menu';
 
-const emit =defineEmits(['setcurrentfriendlist'])
+const emit =defineEmits(['setcurrentfriendlist','lookuserinfo'])
 
 const props = defineProps({
     item: {
@@ -58,10 +58,16 @@ const openeditfriendmenu = (e,item:Friend)=>{
             y: e.clientY,
             items: [
                 {
-                    label: "复制账号",
+                    label: "复制ID",
                     onClick: () => {
                         navigator.clipboard.writeText(item.Id.toString())
                         tip("success","复制成功!")
+                    }
+                },
+                {
+                    label: "查看资料",
+                    onClick: () => {
+                        emit("lookuserinfo",item.Id)
                     }
                 }
             ]

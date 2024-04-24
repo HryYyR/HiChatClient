@@ -137,7 +137,7 @@ const openHeaderHandleMenu = (e, item) => {
                     label: "查看资料",
                     onClick: () => {
                         console.log(item);
-                        emit('lookuserinfo', item)
+                        emit('lookuserinfo', item.UserID)
                     }
                 },
             ]

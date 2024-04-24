@@ -26,6 +26,18 @@ export function nowtime() {
     return text
 }
 
+// 时间格式化 2023-10-17T12:22:48+08:00 -> 2023-10-18 22:28:47
+export function convertISOToFormattedString(isoString) {
+    const date = new Date(isoString);
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0'); // 月份从0开始，所以要加1  
+    const day = String(date.getDate()).padStart(2, '0');
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    const seconds = String(date.getSeconds()).padStart(2, '0');
+    return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+}
+
 export function tip(type: 'error' | 'success' | 'warning' | 'info', message: string) {
     ElMessage({
         "type": type,
@@ -115,18 +127,6 @@ export async function generateAndStoreKey() {
         true,
         ["encrypt", "decrypt"]
     );
-    // const exportedKey = await window.crypto.subtle.exportKey("raw", aesKey);
-    // const byteArray = new Uint8Array(exportedKey);
-    // Convert byteArray to Unicode string
-    // let unicodeString = '';
-    // byteArray.forEach(byte => {
-    //     unicodeString += String.fromCharCode(byte);
-    // });
-    // Encode Unicode string to Base64
-    // const base64String = btoa(unicodeString);
-    // console.log(base64String);
-
-
     return aesKey
 }
 
