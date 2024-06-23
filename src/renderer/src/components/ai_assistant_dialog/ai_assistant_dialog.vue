@@ -181,7 +181,7 @@ type AiMessageListitem = {
 
 <style scoped lang="less">
 .ai_assistant_container {
-    font-family: "华文琥珀" !important;
+    font-weight: 900;
 }
 
 .ai_user {
@@ -220,9 +220,9 @@ type AiMessageListitem = {
 
             .ai_msg {
                 line-height: 1.4rem;
-                font-family: "微软雅黑";
                 margin-top: 5px;
-                font-size: 1rem;
+                font-weight: 0;
+                font-size: 0.9rem;
                 color: white;
                 padding: 5px 10px;
                 background-color: rgb(106, 106, 248);
@@ -244,10 +244,9 @@ type AiMessageListitem = {
         border-radius: 10px;
         border: 3px solid rgb(172, 172, 255);
         transition: 0.2s;
-        font-family: "华文琥珀" !important;
         padding-left: 5px;
         background-color: rgb(236, 239, 248);
-        font-size: 0.7rem;
+        font-size: 0.9rem;
 
         &:focus,
         &:hover {

@@ -30,7 +30,7 @@
             padding: 8px 10px;
             margin: 3px 0;
             border-radius: 10px;
-            max-width: 400px;
+            max-width: 200px;
             overflow-wrap: break-word;
             display: block;
         }
@@ -106,15 +106,18 @@
 }
 
 .sendingmsg {
-    &::before {
-        position: relative;
-        width: 10px;
-        height: 10px;
-        background-color: red;
-        border: dashed 3px #8080808c;
+    &::before{
+        position: absolute !important;
+        content: "";
+        width: 12px;
+        height: 12px;
+        border: dashed 3px #a6a6a68c;
         border-radius: 50%;
         animation: cycle 1s linear infinite;
+        margin-left: -30px;
+        margin-top: 12px;
     }
+        
 }
 
 @keyframes cycle {

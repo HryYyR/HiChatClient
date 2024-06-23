@@ -141,8 +141,8 @@
 
         // localhost
         // 192.168.137.1
-        // const ws = new WebSocket('ws://localhost:3009/ws?id=' + userid)
-        const ws = new WebSocket('ws://192.168.137.1:3009/ws?id=' + userid)
+        // const ws = new WebSocket('ws://localhost/streammedia?id=' + userid)
+        const ws = new WebSocket('ws://192.168.137.1/streammedia?id=' + userid)
         ws.binaryType = "arraybuffer";
 
         const remoteVideo = document.querySelector('#remoteVideo');
@@ -153,8 +153,6 @@
 
         const waitinfodom = document.querySelector('.waitinfo');
         const dealwithcalldom = document.querySelector('.dealwithcall');
-        const disconnectdom = document.querySelector('.disconnect');
-
         const refusebtn = document.getElementById('refusebtn');
         // 点击拒绝按钮
         refusebtn.onclick = () => {
@@ -256,7 +254,7 @@
                     console.log("close connection");
                     setTimeout(() => {
                         window.electron.ipcRenderer.send('closeRemoteVideo')
-                    }, 3000);
+                    }, 2000);
                 }
 
                 if (jsonstr.type === "offer") {
@@ -286,7 +284,7 @@
             peerConnect.ontrack = (track) => {
                 dealwithcalldom.style.display = 'none';
                 waitinfodom.style.display = 'none';
-                disconnectdom.style.display = 'flex';
+                disconnectbtn.style.display = 'block';
                 console.log("连接成功!");
                 console.log(track);
                 if (track.track.kind == 'video') {

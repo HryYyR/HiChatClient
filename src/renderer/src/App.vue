@@ -132,10 +132,11 @@
                 </div>
             </div>
             <div class="other_tool_group">
-                <div @click="outlogin" class="outlogin">
+                <div @click="outlogin(false)" class="outlogin">
                     <QuitIconVue />
                 </div>
-                <div class="Ai_assistant" :username="data.userdata.UserName" :userheader="data.userdata.Avatar" @click="changeAiAssistantDialogVisible">AI</div>
+                <div class="Ai_assistant" :username="data.userdata.UserName" :userheader="data.userdata.Avatar"
+                    @click="changeAiAssistantDialogVisible">AI</div>
             </div>
         </div>
 
@@ -247,6 +248,16 @@
                     v-show="!data.soundrecorddata.visible">
                     发送
                 </div>
+                <div @click="testsend" class="sendbtn"
+                    :style="{ color: data.input ? 'white' : 'rgba(255,255,255,0.4)', 'right': '200px' }"
+                    v-show="!data.soundrecorddata.visible">
+                    性能测试
+                </div>
+                <div @click="closetest" class="sendbtn"
+                    :style="{ color: data.input ? 'white' : 'rgba(255,255,255,0.4)', 'right': '400px' }"
+                    v-show="!data.soundrecorddata.visible">
+                    停止测试
+                </div>
             </div>
         </div>
 
@@ -274,7 +285,7 @@
 
         <!-- 确定退出(解散)群聊对话框 -->
         <el-dialog v-model="data.quitgroupdata.quitGroupDialogVisible" :title="data.quitgroupdata.title" width="30%">
-            <p>退出后不会通知群聊中其他成员，且不会再接收此群消息</p>
+            <p>退出后会通知群聊中其他成员，且不会再接收此群消息</p>
             <template #footer>
                 <span class="dialog-footer">
                     <el-button @click="data.quitgroupdata.quitGroupDialogVisible = false">取消</el-button>
@@ -307,8 +318,9 @@
             @handlesearchfrienddialog="handlesearchfrienddialog" @preapplyaddfriend="preapplyaddfriend"
             @searchfriend="searchfriend" @handlesearchfriendinput="handlesearchfriendinput" />
 
-
-        <AiAssistantDialog :username="data.userdata.UserName" :userheader="data.userdata.Avatar" :aiAssistantDialogVisible="data.aiAssistantDialogData.aiAssistantDialogVisible"
+        <!-- ai助手对话框 -->
+        <AiAssistantDialog :username="data.userdata.UserName" :userheader="data.userdata.Avatar"
+            :aiAssistantDialogVisible="data.aiAssistantDialogData.aiAssistantDialogVisible"
             @changeAiAssistantDialogVisible="changeAiAssistantDialogVisible" />
 
     </div>
@@ -382,7 +394,6 @@ import {
     getgroupmessagelist,
     getimgorigindataapi,
     startusertouservideocall,
-
 } from './API/api'
 
 import {
@@ -400,10 +411,11 @@ import {
 
 
 import ContextMenu from '@imengyu/vue3-context-menu'
+import { isEmpty } from 'lodash';
 
-const win: any = window
-let Store = useCounter()
-const keyPair = new JSEncrypt()
+const win: any = window  //子进程调用
+let Store = useCounter()  //全局数据存储
+const keyPair = new JSEncrypt()  //用于加密
 
 const msglist: any = ref(null)
 const uploadimg: any = ref(null)
@@ -424,7 +436,7 @@ onMounted(() => {
 
 const data = reactive({
     ws: {
-        wsconn: <any>null,  //ws连接
+        wsconn: <WebSocket | null>null,  //ws连接
     },
     wsconnecting: true,
     wsidentify: {
@@ -544,7 +556,6 @@ watch(data.logindata, (newValue, _) => {
         localStorage.setItem("rememberpassword", "1")
         data.logindata.rememberpassword = true
     }
-
 })
 
 watch(data, (nv) => {
@@ -592,6 +603,20 @@ const CurrentCheckUserIsFriend = computed(() => {
 const filterapplyjoingrouplist = computed(() => data.userdata.ApplyList ? data.userdata.ApplyList.filter(i => i.HandleStatus == 0 && i.ApplyUserID != data.userdata.ID).length : 0)
 const filterapplyadduserlist = computed(() => data.userdata.ApplyUserList ? data.userdata.ApplyUserList.filter(i => i.HandleStatus == 0 && i.ApplyUserID != data.userdata.ID).length : 0)
 
+let TobeConfirmedMessage: Array<MessageListitem> = reactive([])
+
+let inn: NodeJS.Timer
+const testsend = async () => {
+    inn = setInterval(() => {
+        for (let i = 0; i < JSON.parse(data.input); i++) {
+            send()
+        }
+    }, 1000)
+}
+const closetest = () => {
+    clearInterval(inn)
+}
+
 // 发送消息
 const send = async () => {
     if (data.input.replace(/ /g, "").length == 0) return
@@ -599,47 +624,55 @@ const send = async () => {
         tip('warning', "内容超出文本限制")
         return
     }
-    let encryptedData
-    if (data.currentSelectType == 1) {
-        let message: MessageListitem = {
-            UserID: data.userdata.ID,
-            UserName: data.userdata.UserName,
-            UserAvatar: data.userdata.Avatar == "" ? `http://${fileurl}/static/icon.png` : data.userdata.Avatar,
-            UserCity: data.userdata.City,
-            UserAge: JSON.stringify(data.userdata.Age),
-            GroupID: data.currentgroupdata.GroupInfo.ID,
-            Msg: data.input,
-            MsgType: 1,
-            IsReply: false,
-            ReplyUserID: 0,
-            Context: [],
-            CreatedAt: new Date().toISOString()
-        }
-        const msgstr = JSON.stringify(message)
-        encryptedData = await encryptAes(data.wsidentify.aeskey, msgstr)
+    let msgstr
+    switch (data.currentSelectType) {
+        case 1:
+            let message: MessageListitem = {
+                UserID: data.userdata.ID,
+                UserName: data.userdata.UserName,
+                UserAvatar: data.userdata.Avatar == "" ? `http://${fileurl}/static/icon.png` : data.userdata.Avatar,
+                UserCity: data.userdata.City,
+                UserAge: JSON.stringify(data.userdata.Age),
+                GroupID: data.currentgroupdata.GroupInfo.ID,
+                Msg: data.input,
+                MsgType: 1,
+                IsReply: false,
+                ReplyUserID: 0,
+                Context: [],
+                CreatedAt: new Date().toISOString()
+            }
+            msgstr = JSON.stringify(message)
+            scrolltonew(200, true)
+            data.grouplist.forEach((m, index) => {
+                if (m.GroupInfo.ID == message.GroupID) {
+                    let mm = message
+                    
+                    mm.MsgStatus = false
+                    const reactmm = reactive(mm)
+                    console.log("待确认的消息",reactmm);
 
-        scrolltonew(200, true)
-    }
-    if (data.currentSelectType == 2) {
-        let msgstr = SendFriendResourceMsg(data.input, 1001, data.userdata, data.currentfrienddata)
-        encryptedData = await encryptAes(data.wsidentify.aeskey, msgstr)
+                    TobeConfirmedMessage.push(reactmm)
+                    data.grouplist[index].MessageList.push(reactmm)
+                }
+            })
+            break;
+        case 2:
+            msgstr = SendFriendResourceMsg(data.input, 1001, data.userdata, data.currentfrienddata)
+            break
     }
     // console.log("encryptedData",encryptedData);
-
-    data.ws.wsconn.send(encryptedData)
-    data.input = ""
-
-    // data.AckFlag++
-    // console.log(msglist);
+    if (!isEmpty(msgstr)) {
+        const encryptedData = await encryptAes(data.wsidentify.aeskey, msgstr)
+        data.ws?.wsconn?.send(encryptedData)
+    }
+    // data.input = ""
 }
 
 // 设置监听当前窗口
 const setcurrentlistener = () => {
     const { scrollHeight, scrollTop, offsetHeight } = msglist.value
     // console.log(scrollHeight, scrollTop, offsetHeight);
-
     if (scrollTop < 150 && data.loadingmsaageburial) {
-
         if (data.currentSelectType == 1) {
             data.loadingmsaageburial = false
             getgroupmessagelist(data.currentgroupdata.GroupInfo.ID, data.currentgroupdata.MessageList.length).then(res => {
@@ -784,59 +817,64 @@ const login = () => {
         }
 
         connectws()
-        // 设置显示
-        setTimeout(() => {
-            data.loginloading = false
-            win.api.changWindowSize()
-            data.islogin = true
-        }, 1000);
+
 
     }).catch((err) => {
+        let errinfo = "发生了未知的错误"
         console.log(err);
-
+        if (err.status >= 500) {
+            errinfo = "网络开了点小差,请稍后重试!"
+        }
         setTimeout(() => {
-            tip("error", "账号或密码错误!")
+            tip("error", errinfo)
             data.loginloading = false
+
         }, 1000);
+
         return
     })
 }
 
 // 退出登录
-const outlogin = () => {
-    ElMessageBox.confirm("确认退出登陆吗?", "退出登陆", {
-        confirmButtonText: '退出',
-        cancelButtonText: '取消',
-    }).then(() => {
-        win.api.backtologin()
-        setTimeout(() => {
-            data.islogin = false
-        }, 50);
-        data.wsidentify.wsmsgindex = 0
-        data.wsidentify.publickey = ""
-        data.ws.wsconn.close()
-        data.currentgroupdata = <GroupList>{}
-        data.currentSelectType = 0
-        data.currentSelectTab = true
-        data.currentfrienddata = <Friend>{}
-        data.input = ""
-        data.searchdata.searchinput = ""
-        data.addgroupdata.addgroupinput = ""
-        data.addgroupdata.addgroupsearchlist = <GroupinfoList>[]
-        data.soundrecorddata.visible = false
-        data.addUserdata.targetUserData = {}
-    }).catch(() => {
-
-    })
+const outlogin = (immediately: boolean = false) => {
+    if (immediately) {
+        loginOutAndClearInfo()
+    } else {
+        ElMessageBox.confirm("确认退出登陆吗?", "退出登陆", {
+            confirmButtonText: '退出',
+            cancelButtonText: '取消',
+        }).then(() => {
+            loginOutAndClearInfo()
+        }).catch(() => {
+        })
+    }
     // ipcRenderer.send('backtologin')
 
+}
+const loginOutAndClearInfo = () => {
+    win.api.backtologin()
+    setTimeout(() => {
+        data.islogin = false
+    }, 50);
+    data.wsidentify.wsmsgindex = 0
+    data.wsidentify.publickey = ""
+    data.ws?.wsconn?.close()
+    data.currentgroupdata = <GroupList>{}
+    data.currentSelectType = 0
+    data.currentSelectTab = true
+    data.currentfrienddata = <Friend>{}
+    data.input = ""
+    data.searchdata.searchinput = ""
+    data.addgroupdata.addgroupinput = ""
+    data.addgroupdata.addgroupsearchlist = <GroupinfoList>[]
+    data.soundrecorddata.visible = false
+    data.addUserdata.targetUserData = {}
 }
 
 
 // 处理消息
 const handleMsg = (msg: any) => {
     const DefaultGroupMsg = async (msg: MessageListitem) => {
-        // notification
         if (msg.MsgType == 2) {
             msg.Msg = await imgurltolocalimg(msg.Msg)
         }
@@ -844,16 +882,35 @@ const handleMsg = (msg: any) => {
             // console.log(group.GroupInfo.ID, msg.GroupID);
             if (group.GroupInfo.ID == msg.GroupID) {
                 if (group.MessageList == null) { group.MessageList = [] }
-                group.MessageList.push(msg)
+
+                // 自己发的消息的ack消息,通过reactive来引用修改消息状态 
+                if (msg.UserID == data.userdata.ID) {
+                    console.log("用于确认的消息",msg);
+                    
+                    let tempmsg = msg
+                    tempmsg.MsgStatus = false
+                    TobeConfirmedMessage.forEach(msg => {
+                        if (tempmsg.CreatedAt == msg.CreatedAt && tempmsg.UserID ==msg.UserID) {
+                            setTimeout(() => {
+                                msg.MsgStatus = true
+                            }, 500);
+                        }
+                    })
+                } else {
+                    // 其他用户发的消息,添加至消息列表
+                    group.MessageList.push(msg)
+                }
+
                 let temp = data.grouplist[index]
                 data.grouplist[index] = data.grouplist[0]
                 data.grouplist[0] = temp
+
+                // notification
                 if (msg.UserID != data.userdata.ID) {
-                    win.api.notification(group.GroupInfo.GroupName, msg.Msg) //系统通知
+                    win.api.notification(group.GroupInfo.GroupName, msg.MsgType == 1 ? msg.Msg : "[媒体消息]") //系统通知
                 }
             }
         })
-
     }
 
     const refreshGroupMsg = async () => {
@@ -896,7 +953,6 @@ const handleMsg = (msg: any) => {
     }
 
     const DefaultFriendMsg = async (msg: FriendMessageListitem) => {
-
         if (msg.MsgType == 1002) {
             msg.Msg = await imgurltolocalimg(msg.Msg)
         }
@@ -949,6 +1005,7 @@ const handleMsg = (msg: any) => {
         return
     }
 
+    // 1v1视频通话
     const UserToUserRemoteVideoCallMsg = async (msg: FriendMessageListitem) => {
         console.log(msg);
         win.api.createRemoteVideo(data.userdata.ID, "receiver")
@@ -966,7 +1023,10 @@ const handleMsg = (msg: any) => {
         201: QuitGroupMsg,
         202: JoginGroupMsg,
         204: DissolveGroupMsg,
-        500: refreshgrouplistdata,
+        500: ()=>{
+            refreshgrouplistdata()
+            refreshgroupnoticedata()
+        },
         501: () => { //刷新好友列表
             refreshfriendlistdata()
             refreshfriendnoticedata()
@@ -980,7 +1040,10 @@ const handleMsg = (msg: any) => {
         1501: UserToUserRemoteVideoCallMsg,
     }
     const msgtype = msg.MsgType
-    typelist[msgtype](msg)
+    let func = typelist[msgtype]
+    if (typeof func == "function") {
+        func(msg)
+    }
 
     if (msg.UserID != data.userdata.ID && msg.MsgType < 500) { //如果不是自己发的消息并且不是刷新消息
         if (JSON.stringify(data.currentgroupdata) != "{}") { //当前是否选中了群聊
@@ -1037,9 +1100,7 @@ setInterval(async () => {
             const DecryptedMsgStr = await decryptAes(data.wsidentify.aeskey, encryptedData.Message, encryptedData.Iv)
             // console.log("解密字符", DecryptedMsgStr);
             const DecryptedMsg = JSON.parse(DecryptedMsgStr);
-            // console.log("解密消息", DecryptedMsg);
-            // msg.MsgStatus = false
-            // setTimeout(() => checkmsgisovertime(msg), 1000);
+            console.log("解密消息", DecryptedMsg);
             handleMsg(DecryptedMsg)
         } catch (error) {
             console.error('Error parsing JSON:', error);
@@ -1059,21 +1120,10 @@ const handlepublickeymsg = async (keymsg: any) => {
 
     let aeskeybase64 = arrayToBase64(aeskey)
     let enkey = keyPair.encrypt(aeskeybase64)
-    data.ws.wsconn.send(enkey)
+    if (enkey != false) {
+        data.ws?.wsconn?.send(enkey)
+    }
 }
-
-// const checkmsgisovertime = (msg: any) => {
-//     if (data.AckFlag == 0) {
-//         msg.MsgStatus = true
-//     } else {
-//         setTimeout(() => {
-//             if (data.AckFlag == 0) {
-//                 msg.MsgStatus = true
-//             }
-//         }, 5000);
-//     }
-// }
-
 
 // 去注册页面
 const toregister = () => {
@@ -1411,7 +1461,9 @@ const initListener = () => {
                 data.input += "\n"
                 return
             } else {
-                send()
+                if (!data.aiAssistantDialogData.aiAssistantDialogVisible) {
+                    send()
+                }
             }
 
         }
@@ -1440,7 +1492,7 @@ const initListener = () => {
                                 msg = SendFriendResourceMsg(res.data.fileurl, 1003, data.userdata, data.currentfrienddata)
                             }
                             let encryptedData = await encryptAes(data.wsidentify.aeskey, msg)
-                            data.ws.wsconn.send(encryptedData)
+                            data.ws?.wsconn?.send(encryptedData)
                             scrolltonew(500, true)
                         }).catch(err => {
                             tip('error', err.response.data.msg)
@@ -1536,14 +1588,14 @@ const clearcurrentgroupmsg = async () => {
         CreatedAt: new Date()
     }
     let encryptedData = await encryptAes(data.wsidentify.aeskey, JSON.stringify(message))
-    data.ws.wsconn.send(encryptedData)
+    data.ws?.wsconn?.send(encryptedData)
 }
 
 // 清除当前好友消息
 const clearcurrentfriendmsg = async () => {
     let message = SendFriendResourceMsg("", 1401, data.userdata, data.currentfrienddata)
     let encryptedData = await encryptAes(data.wsidentify.aeskey, message)
-    data.ws.wsconn.send(encryptedData)
+    data.ws?.wsconn?.send(encryptedData)
 }
 
 // 上传图片之前
@@ -1561,7 +1613,7 @@ const onSuccessUploadImg = async (response: any, uploadFile: any) => {
         msg = SendFriendResourceMsg(uploadFile.response.fileurl, 1002, data.userdata, data.currentfrienddata)
     }
     let encryptedData = await encryptAes(data.wsidentify.aeskey, msg)
-    data.ws.wsconn.send(encryptedData)
+    data.ws?.wsconn?.send(encryptedData)
     scrolltonew(500, true)
 
 }
@@ -1582,6 +1634,13 @@ const connectws = async () => {
     data.ws.wsconn = new WebSocket(`ws://${wsurl}/ws?token=${token}`),
 
         data.ws.wsconn.onopen = function () {
+            // 设置显示
+            setTimeout(() => {
+                data.loginloading = false
+                win.api.changWindowSize()
+                data.islogin = true
+            }, 1000);
+
             console.log("connect success!");
             data.wsconnecting = false
             reconnectnum = 0
@@ -1601,9 +1660,9 @@ const connectws = async () => {
         if (evt.code == 1005) return
         tip('error', "网络连接超时,尝试重连中...")
         if (reconnectnum >= 3) {
-            outlogin()
-            tip('error', "网络连接失败,请检查网络后重试!")
+            outlogin(true)
             data.wsconnecting = false
+            data.loginloading = false
             reconnectnum = 0
             return
         }
@@ -1813,7 +1872,7 @@ const getmoregroupinfo = () => {
     })
 }
 
-const changeAiAssistantDialogVisible = ()=>{
+const changeAiAssistantDialogVisible = () => {
     data.aiAssistantDialogData.aiAssistantDialogVisible = !data.aiAssistantDialogData.aiAssistantDialogVisible
 }
 

@@ -69,6 +69,7 @@ export type GroupInfo = {
     UpdatedAt: string
 }
 
+// 群聊消息体
 export type MessageListitem = {
     ID?: number
     Context: any

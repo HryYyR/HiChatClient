@@ -5,15 +5,15 @@ import { Md5 } from 'ts-md5';
 // const apifileurl = "http://localhost"
 
 
-const defaulturl = "http://localhost"
-const apifileurl = "http://localhost"
-const apistaticurl = "http://localhost:3005"
-axios.defaults.baseURL = "http://localhost:3004"
+// const defaulturl = "http://localhost"
+// const apifileurl = "http://localhost"
+// const apistaticurl = "http://localhost"
+// axios.defaults.baseURL = "http://localhost"
 
-// const defaulturl = "http://192.168.137.1"
-// const apifileurl = "http://192.168.137.1"
-// const apistaticurl = "http://192.168.137.1:3005"
-// axios.defaults.baseURL = "http://192.168.137.1:3004"
+const defaulturl = "http://192.168.137.1"
+const apifileurl = "http://192.168.137.1"
+const apistaticurl = "http://192.168.137.1"
+axios.defaults.baseURL = "http://192.168.137.1"
 
 // 登录
 export function loginapi(username: string, password: string) {
@@ -113,46 +113,6 @@ export function RefreshApplyAddFriendListapi(id: number) {
 }
 
 
-
-// 搜索群聊
-export function searchGroupapi(text: string) {
-    const msg = {
-        searchstr: text
-    }
-    return axios.post("/user/searchGroup", msg)
-}
-
-// 处理加入群聊
-export function joingroupapi(applyid: number, status: number) {
-    let msg = {
-        ApplyID: applyid,
-        HandleStatus: status
-    }
-    return axios.post("/user/handlejoingroup", msg)
-}
-
-// 申请加入群聊
-export function applyjoingroupapi(applydata: any) {
-    return axios.post("/user/applyjoingroup", applydata)
-}
-
-// 创建群聊
-export function creategroupapi(creategroupinput: string, headerurl: string) {
-    let msg = {
-        GroupName: creategroupinput,
-        Avatar: headerurl
-    }
-    return axios.post("/user/creategroup", msg)
-}
-
-// 退出群聊
-export function exitgroupapi(id: number) {
-    let msg = {
-        ID: id
-    }
-    return axios.post("/user/exitgroup", msg)
-}
-
 // 修改用户信息
 export function edituserdataapi(age: number, city: string, introduce: string) {
     let aage: any
@@ -185,34 +145,6 @@ export function getuserdataapi(id: number) {
     })
 }
 
-// 申请添加好友
-export function applyadduserapi(PreApplyUserID: number, PreApplyUserName: string, ApplyUserID: number, ApplyUserName: string, ApplyMsg: string) {
-    let msg = {
-        ApplyUserID: ApplyUserID,  //申请人
-        ApplyUserName: ApplyUserName,
-        PreApplyUserID: PreApplyUserID, //被申请人
-        PreApplyUserName: PreApplyUserName,
-        ApplyMsg: ApplyMsg
-    }
-    return axios.post("/user/applyadduser", msg)
-}
-
-// 处理添加好友
-export function adduserapi(applyid: number, status: number) {
-    let msg = {
-        ApplyID: applyid,
-        HandleStatus: status
-    }
-    return axios.post("/user/handleadduser", msg)
-}
-
-// 检查指定用户登录状态
-export function startusertouservideocall(userid: number) {
-    let msg = {
-        userid: userid,
-    }
-    return axios.post("/user/startusertouservideocall", msg)
-}
 
 
 // 上传资源
@@ -299,5 +231,79 @@ export function aimessageapi(msg: string,msgtype:number) {
             msgtype:msgtype
         }
     })
+}
+
+
+
+
+
+
+
+// 搜索群聊
+export function searchGroupapi(text: string) {
+    const msg = {
+        searchstr: text
+    }
+    return axios.post("/ws/user/searchGroup", msg)
+}
+
+// 处理加入群聊
+export function joingroupapi(applyid: number, status: number) {
+    let msg = {
+        ApplyID: applyid,
+        HandleStatus: status
+    }
+    return axios.post("/ws/user/handlejoingroup", msg)
+}
+
+// 申请加入群聊
+export function applyjoingroupapi(applydata: any) {
+    return axios.post("/ws/user/applyjoingroup", applydata)
+}
+
+// 创建群聊
+export function creategroupapi(creategroupinput: string, headerurl: string) {
+    let msg = {
+        GroupName: creategroupinput,
+        Avatar: headerurl
+    }
+    return axios.post("/ws/user/creategroup", msg)
+}
+
+// 退出群聊
+export function exitgroupapi(id: number) {
+    let msg = {
+        ID: id
+    }
+    return axios.post("/ws/user/exitgroup", msg)
+}
+
+// 申请添加好友
+export function applyadduserapi(PreApplyUserID: number, PreApplyUserName: string, ApplyUserID: number, ApplyUserName: string, ApplyMsg: string) {
+    let msg = {
+        ApplyUserID: ApplyUserID,  //申请人
+        ApplyUserName: ApplyUserName,
+        PreApplyUserID: PreApplyUserID, //被申请人
+        PreApplyUserName: PreApplyUserName,
+        ApplyMsg: ApplyMsg
+    }
+    return axios.post("/ws/user/applyadduser", msg)
+}
+
+// 处理添加好友
+export function adduserapi(applyid: number, status: number) {
+    let msg = {
+        ApplyID: applyid,
+        HandleStatus: status
+    }
+    return axios.post("/ws/user/handleadduser", msg)
+}
+
+// 开始远程视频通话
+export function startusertouservideocall(userid: number) {
+    let msg = {
+        userid: userid,
+    }
+    return axios.post("/ws/user/startusertouservideocall", msg)
 }
 

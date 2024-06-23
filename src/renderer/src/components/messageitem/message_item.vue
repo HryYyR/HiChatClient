@@ -9,12 +9,12 @@
             <img :src="`http://${fileurl}/${item.UserAvatar}`" alt="">
         </div>
 
+
         <!-- 内容 -->
         <pre style="text-wrap: wrap;" v-if="item.MsgType == 1 || item.MsgType == 2 || item.MsgType == 3" class="msg_text"
             :style="{ alignItems: item.UserID == props.userdata.ID ? 'flex-end' : 'flex-start' }">
-
             <!-- 名称 -->
-        <p style="display:flex;"><p>{{ item.UserName }}</p> <p class="creater" v-if="item.UserID==currentgroupdata.GroupInfo.CreaterID"> 群主</p></p>
+        <p style="display:flex;"><p>{{ item.UserName }}</p> <p class="creater" v-if="item.UserID == currentgroupdata.GroupInfo.CreaterID"> 群主</p></p>
 
         <el-image
         class="msg_info" 
@@ -37,11 +37,12 @@
         class="msg_info" 
         :class="{
             selfinfo: item.UserID == props.userdata.ID,
+            sendingmsg:item.MsgStatus==false
         }"
         v-text="item.Msg"></p>
-        <div class="sendingmsg"></div>
 
         </pre>
+
 
         <!-- 右头像 -->
         <div class="msg_header"
@@ -65,7 +66,7 @@ import { fileurl } from '../../main'
 import MessageTimeVue from './messagetime/message_time.vue'
 import { ElMessage } from 'element-plus';
 import { PropType } from 'vue';
-import { MessageListitem,GroupList } from '@renderer/models/models';
+import { MessageListitem, GroupList } from '@renderer/models/models';
 const emit = defineEmits(['openMsgHandleMenu', 'changeHeaderDialog', 'lookuserinfo'])
 let props = defineProps({
     item: {

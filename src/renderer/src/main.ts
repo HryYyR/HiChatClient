@@ -13,15 +13,15 @@ import '@imengyu/vue3-context-menu/lib/vue3-context-menu.css'
 import ContextMenu from '@imengyu/vue3-context-menu'
 
 
-export const wsurl = "localhost:3004"
-export const fileurl = 'localhost'
-export const staticurl = "localhost:3005"
-axios.defaults.baseURL = "http://localhost:3004"
+// export const wsurl = "localhost"
+// export const fileurl = 'localhost'
+// export const staticurl = "localhost"
+// axios.defaults.baseURL = "http://localhost"
 
-// export const wsurl = "192.168.137.1:3004"
-// export const fileurl = '192.168.137.1'
-// export const staticurl = "192.168.137.1:3005"
-// axios.defaults.baseURL = "http://192.168.137.1:3004"
+export const wsurl = "192.168.137.1"
+export const fileurl = '192.168.137.1'
+export const staticurl = "192.168.137.1"
+axios.defaults.baseURL = "http://192.168.137.1"
 
 
 axios.defaults.timeout = 4000;

@@ -1,3 +1,4 @@
+
 .menu_group{
     span {
         text-align: center;
@@ -15,8 +16,14 @@
 .apply_msg_list_dialog {
     display: flex;
     flex-direction: column;
-    justify-content: center;
+    justify-content: flex-start;
+    height:400px;
+    overflow: auto;
 
+      /* 滚动条整体 */
+    &::-webkit-scrollbar {
+        width: 0px;
+    }
 
     &>div {
         background-color: white;
