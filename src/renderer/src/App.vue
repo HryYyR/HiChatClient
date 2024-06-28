@@ -122,7 +122,7 @@
                 <div class="friend_list list" :class="{ checkf: data.currentSelectTab }">
                     <FriendItemVue v-for="(item) in data.userdata.FriendList" :key="item.Id" :item="item"
                         :currentfrienddata="data.currentfrienddata" @setcurrentfriendlist="setcurrentfriendlist"
-                        @lookuserinfo="lookuserinfo" />
+                        @lookuserinfo="lookuserinfo" @deletefriend="deletefriend" />
                 </div>
                 <!-- 群列表 -->
                 <div class="group_list list" :class="{ checkg: !data.currentSelectTab }">
@@ -394,6 +394,7 @@ import {
     getgroupmessagelist,
     getimgorigindataapi,
     startusertouservideocall,
+    deletefriendapi,
 } from './API/api'
 
 import {
@@ -412,6 +413,7 @@ import {
 
 import ContextMenu from '@imengyu/vue3-context-menu'
 import { isEmpty } from 'lodash';
+import { AxiosError } from 'axios';
 
 const win: any = window  //子进程调用
 let Store = useCounter()  //全局数据存储
@@ -646,10 +648,10 @@ const send = async () => {
             data.grouplist.forEach((m, index) => {
                 if (m.GroupInfo.ID == message.GroupID) {
                     let mm = message
-                    
+
                     mm.MsgStatus = false
                     const reactmm = reactive(mm)
-                    console.log("待确认的消息",reactmm);
+                    console.log("待确认的消息", reactmm);
 
                     TobeConfirmedMessage.push(reactmm)
                     data.grouplist[index].MessageList.push(reactmm)
@@ -789,7 +791,7 @@ const setcurrentfriendlist = (frienddata: Friend) => {
 const login = () => {
     data.loginloading = true
     const { username, password } = data.logindata
-    loginapi(username, password).then(res => {
+    loginapi(username, password)?.then(res => {
         console.log(res);
         // 数据处理
         if (res.data.userdata.GroupList == null) {
@@ -819,17 +821,21 @@ const login = () => {
         connectws()
 
 
-    }).catch((err) => {
+    }).catch((err: AxiosError) => {
         let errinfo = "发生了未知的错误"
         console.log(err);
-        if (err.status >= 500) {
+        if (err.status && err.status >= 500) {
             errinfo = "网络开了点小差,请稍后重试!"
+        }
+        if (err.response && err.response.data) {
+            const data: any = err.response.data
+            errinfo = data.msg
         }
         setTimeout(() => {
             tip("error", errinfo)
             data.loginloading = false
 
-        }, 1000);
+        }, 500);
 
         return
     })
@@ -885,12 +891,12 @@ const handleMsg = (msg: any) => {
 
                 // 自己发的消息的ack消息,通过reactive来引用修改消息状态 
                 if (msg.UserID == data.userdata.ID) {
-                    console.log("用于确认的消息",msg);
-                    
+                    console.log("用于确认的消息", msg);
+
                     let tempmsg = msg
                     tempmsg.MsgStatus = false
                     TobeConfirmedMessage.forEach(msg => {
-                        if (tempmsg.CreatedAt == msg.CreatedAt && tempmsg.UserID ==msg.UserID) {
+                        if (tempmsg.CreatedAt == msg.CreatedAt && tempmsg.UserID == msg.UserID) {
                             setTimeout(() => {
                                 msg.MsgStatus = true
                             }, 500);
@@ -1023,20 +1029,20 @@ const handleMsg = (msg: any) => {
         201: QuitGroupMsg,
         202: JoginGroupMsg,
         204: DissolveGroupMsg,
-        500: ()=>{
+        500: () => {
             refreshgrouplistdata()
             refreshgroupnoticedata()
         },
-        501: () => { //刷新好友列表
-            refreshfriendlistdata()
-            refreshfriendnoticedata()
-        },
         502: refreshgroupnoticedata,
-        503: refreshfriendnoticedata,
-        // 888: AckMsg,
         1001: DefaultFriendMsg,
         1002: DefaultFriendMsg,
         1003: DefaultFriendMsg,
+        1005: refreshfriendnoticedata,
+        1006: refreshfriendlistdata,
+        1007: () => { //刷新好友列表
+            refreshfriendlistdata()
+            refreshfriendnoticedata()
+        },
         1501: UserToUserRemoteVideoCallMsg,
     }
     const msgtype = msg.MsgType
@@ -1148,7 +1154,7 @@ const register = () => {
         return
     }
 
-    registerapi(username, password, email, emailcode).then(res => {
+    registerapi(username, password, email, emailcode)?.then(res => {
         console.log(res);
         if (res.status != 200) {
             tip("error", "注册失败,请稍后再试!")
@@ -1236,6 +1242,13 @@ const refreshfriendlistdata = async () => {
     RefreshFriendListapi(data.userdata.ID).then(res => {
         console.log(res.data);
         data.userdata.FriendList = res.data.data
+
+        let flist = data.userdata.FriendList.filter(f => f.Id == data.currentfrienddata.Id)
+        if (flist.length == 0) {
+            data.currentSelectType = 0
+            data.currentfrienddata = <Friend>{}
+        }
+
         console.log(data.userdata);
     }).catch(err => {
         tip('error', err.response)
@@ -1674,6 +1687,7 @@ const connectws = async () => {
     }
     // 接收消息 
     data.ws.wsconn.onmessage = function (evt: any) {
+        // 身份校验,交换密钥
         if (data.wsidentify.wsmsgindex == 0) {
             handlepublickeymsg(evt.data)
             data.wsidentify.wsmsgindex++
@@ -1767,6 +1781,22 @@ const lookuserinfo = (userid: number) => {
 const handlelookuserinfodialog = (visible: boolean) => {
     data.userinfodata.userdata = <UserShowData>{}
     data.userinfodata.UserDetailDialogVisible = visible
+}
+
+// 删除好友
+const deletefriend = (targetuserid: number) => {
+    ElMessageBox.confirm("确认删除此好友吗?", "删除好友", {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+    }).then(() => {
+        deletefriendapi(targetuserid).then(res => {
+            if (res.status = 200) {
+                tip("success", "删除成功")
+            }
+        }).catch(() => {
+            tip("error", "删除失败,请稍后再试")
+        })
+    })
 }
 
 // 切换搜索好友的对话框

@@ -37,7 +37,7 @@ import { PropType } from 'vue'
 import { tip } from "../../utils/utils";
 import  ContextMenu from '@imengyu/vue3-context-menu';
 
-const emit =defineEmits(['setcurrentfriendlist','lookuserinfo'])
+const emit =defineEmits(['setcurrentfriendlist','lookuserinfo','deletefriend'])
 
 const props = defineProps({
     item: {
@@ -68,6 +68,12 @@ const openeditfriendmenu = (e,item:Friend)=>{
                     label: "查看资料",
                     onClick: () => {
                         emit("lookuserinfo",item.Id)
+                    }
+                },
+                {
+                    label: "删除好友",
+                    onClick: () => {
+                        emit("deletefriend",item.Id)
                     }
                 }
             ]

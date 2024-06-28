@@ -40,7 +40,8 @@ function createWindow(): void {
     mainWindow.setTitle('Hichat');
 
     mainWindow.setMinimumSize(800, 500);
-    mainWindow.setSize(1050, 700)
+    // mainWindow.setSize(1050, 700)
+    mainWindow.setSize(800, 500)
 
     mainWindow.center()
   }

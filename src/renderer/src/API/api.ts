@@ -1,6 +1,7 @@
 import axios from 'axios'
 import { Md5 } from 'ts-md5';
-
+import CryptoJS  from 'crypto-js'
+import { tip } from './../utils/utils';
 // const defaulturl = "http://localhost"
 // const apifileurl = "http://localhost"
 
@@ -18,28 +19,38 @@ axios.defaults.baseURL = "http://192.168.137.1"
 // 登录
 export function loginapi(username: string, password: string) {
     const md5: Md5 = new Md5()
-    md5.appendAsciiStr(password)
-    const encryptionpassword = md5.end()
-    let info = {
-        username: username,
-        password: encryptionpassword
+    md5.appendAsciiStr(username)
+    const encryptionusername = md5.end()?.toString()
+    if (typeof encryptionusername == "undefined") {
+        tip("error","数据输入有误!请检查后重试")
+        return
     }
-    return axios({
-        url: defaulturl + "/login",
-        method: "POST",
-        data: info
-    })
+        const hash = CryptoJS.HmacSHA256(password, encryptionusername).toString()
+        let info = {
+            username: username,
+            password: hash
+        }
+        return axios({
+            url: defaulturl + "/login",
+            method: "POST",
+            data: info
+        })
 }
 
 // 注册
 export function registerapi(username: string, password: string, email: string, emailcode: string) {
     const md5: Md5 = new Md5()
-    md5.appendAsciiStr(password)
-    const encryptionpassword = md5.end()
+    md5.appendAsciiStr(username)
+    const encryptionusername = md5.end()?.toString()
+    if (typeof encryptionusername == "undefined") {
+        tip("error","数据输入有误!请检查后重试")
+        return
+    }
+    const hash = CryptoJS.HmacSHA256(password, encryptionusername).toString()
 
     let registerinfo = {
         username: username,
-        password: encryptionpassword,
+        password: hash,
         email: email,
         code: emailcode
     }
@@ -297,6 +308,15 @@ export function adduserapi(applyid: number, status: number) {
         HandleStatus: status
     }
     return axios.post("/ws/user/handleadduser", msg)
+}
+
+
+// 删除好友
+export function deletefriendapi(targetuserid: number) {
+    let msg = {
+        userid: targetuserid,
+    }
+    return axios.post("/ws/user/deletefriend", msg)
 }
 
 // 开始远程视频通话
