@@ -217,9 +217,18 @@
                 </div>
             </div>
 
-
             <div class="rightlist_input" v-if="data.currentSelectType != 0">
                 <div class="input_tool">
+
+                    <div class="tool_item">
+                        <Vueemojiicon @click="data.displayemojilist = !data.displayemojilist" />
+                        <Vue3EmojiPicker :static-texts="{ placeholder: '', skinTone: '' }" v-show="data.displayemojilist"
+                            :theme='data.emojitheme' :hide-search="true" :hide-group-icons="true" :hide-group-names="true"
+                            :disable-sticky-group-names="true" :disable-skin-tones="true"
+                            :disabled-groups="['food_drink', 'activities', 'travel_places', 'objects', 'symbols', 'flags', 'animals_nature', 'ghost', 'snowboarder', 'gem']"
+                            class="emojipicker" :native="true" @select="selectemoji" />
+                    </div>
+
                     <el-upload ref="uploadimg" method="POST" :headers="{ 'authorization': Store.token }"
                         :action="`http://${fileurl}/file/uploadfile`" :limit="10" :before-upload="beforeUploadImg"
                         :on-success="onSuccessUploadImg" :on-error="onErrorUploadImg" :auto-upload="true"
@@ -230,6 +239,7 @@
                             </el-icon>
                         </template>
                     </el-upload>
+
                     <div class="tool_item">
                         <el-icon class="tool_item" :class="{ 'sound_record_active': data.soundrecorddata.visible }"
                             @click="handlesoundrecord">
@@ -237,7 +247,8 @@
                         </el-icon>
                     </div>
                 </div>
-                <textarea v-show="!data.soundrecorddata.visible" cols="30" rows="10" v-model="data.input"></textarea>
+                <textarea ref="inputtestarea" @click="clickinputevent" v-show="!data.soundrecorddata.visible" cols="30"
+                    rows="10" v-model="data.input"></textarea>
                 <div class="tool_sound" v-show="data.soundrecorddata.visible">
                     <el-icon :class="{ 'sound_record_active': data.soundrecorddata.recordStatus }">
                         <Microphone />
@@ -323,6 +334,7 @@
             :aiAssistantDialogVisible="data.aiAssistantDialogData.aiAssistantDialogVisible"
             @changeAiAssistantDialogVisible="changeAiAssistantDialogVisible" />
 
+
     </div>
 </template>
 
@@ -365,6 +377,10 @@ import MoreGroupInfoDrawerDetail from './components/moregroupinfodrawerdetail/mo
 import AiAssistantDialog from './components/ai_assistant_dialog/ai_assistant_dialog.vue'
 
 import QuitIconVue from './components/icon-compoment/quit_icon.vue'
+
+import Vueemojiicon from './icon/emoji.vue'
+import Vue3EmojiPicker from 'vue3-emoji-picker';
+
 
 import {
     loginapi,
@@ -421,6 +437,7 @@ const keyPair = new JSEncrypt()  //用于加密
 
 const msglist: any = ref(null)
 const uploadimg: any = ref(null)
+const inputtestarea: any = ref(null)
 let reconnectnum = 0
 
 onMounted(() => {
@@ -457,6 +474,10 @@ const data = reactive({
     grouplist: <Group>[],//群信息
 
     input: "hello!",  //聊天输入框
+    inputfocusposition: 0, //输入框光标位置
+
+    displayemojilist: false,
+    emojitheme: <any>'dark',
 
     currentgroupdata: <GroupList>{},//当前群聊对话框
     currentfrienddata: <Friend>{},  //当前好友对话框
@@ -621,6 +642,8 @@ const closetest = () => {
 
 // 发送消息
 const send = async () => {
+    data.displayemojilist = false
+
     if (data.input.replace(/ /g, "").length == 0) return
     if (data.input.length > 1000) {
         tip('warning', "内容超出文本限制")
@@ -667,7 +690,7 @@ const send = async () => {
         const encryptedData = await encryptAes(data.wsidentify.aeskey, msgstr)
         data.ws?.wsconn?.send(encryptedData)
     }
-    // data.input = ""
+    data.input = ""
 }
 
 // 设置监听当前窗口
@@ -1904,6 +1927,28 @@ const getmoregroupinfo = () => {
 
 const changeAiAssistantDialogVisible = () => {
     data.aiAssistantDialogData.aiAssistantDialogVisible = !data.aiAssistantDialogData.aiAssistantDialogVisible
+}
+
+// 点击testarea(input)触发
+const clickinputevent = () => {
+    data.inputfocusposition = inputtestarea.value.selectionStart
+    console.log(data.inputfocusposition);
+}
+
+// 选择emoji时触发
+const selectemoji = async (emoji) => {
+    const cursorPos = inputtestarea.value.selectionStart
+    if (inputtestarea != null) {
+        data.input = data.input.slice(0, cursorPos) + emoji.i + data.input.slice(cursorPos, data.input.length);
+    } else {
+        data.input += emoji.i
+    }
+
+    await inputtestarea.value.focus()
+    data.inputfocusposition += 2
+    inputtestarea.value.selectionStart = data.inputfocusposition
+    inputtestarea.value.selectionEnd = data.inputfocusposition
+
 }
 
 export type GroupInfo = {

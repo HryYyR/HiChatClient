@@ -382,12 +382,12 @@
 
             @keyframes Ai_animate {
                 from {
-                    transform: rotate3d(1,0,1,-15deg);
+                    transform: rotate3d(1, 0, 1, -15deg);
                 }
 
                 to {
 
-                    transform: rotate3d(1,0,1,15deg);
+                    transform: rotate3d(1, 0, 1, 15deg);
                 }
             }
 
@@ -545,6 +545,25 @@
                 }
             }
         }
+    }
+
+
+}
+
+.emojipicker {
+    position: absolute !important;
+    width: 300px !important;
+    height: 150px !important;
+    overflow-y: auto;
+    overflow-x: hidden;
+    margin-top: -200px;
+    padding: 5px;
+    background-color: rgb(255, 255, 255);
+    box-shadow: 0px 0px 20px 3px rgb(168, 168, 168);
+    border-radius: 5px;
+
+    & .v3-foot-left {
+        display: none;
     }
 }
 
