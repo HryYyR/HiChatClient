@@ -38,8 +38,10 @@
     </div>
 
     <!-- 主面板 -->
-    <div v-show="data.islogin" class="index" v-loading="data.wsconnecting">
-        <div class="left_list">
+    <div v-show="data.islogin" class="index" :style="{userSelect:isResizing?'none':'auto'}" v-loading="data.wsconnecting">
+        <div class="left_list"  ref="resizableDiv" @mousedown="onMouseDownResizerX">
+            <div class="resizer resizerX"></div>
+
             <UserInfoVue @edituserdata="edituserdata" @userdetaildialoghandleClose="userdetaildialoghandleClose"
                 :UserDetailDialogVisible="data.userdetaildata.UserDetailDialogVisible" :userdata="data.userdata" />
 
@@ -215,9 +217,13 @@
                         <ArrowDown />
                     </el-icon>
                 </div>
+
+
             </div>
 
-            <div class="rightlist_input" v-if="data.currentSelectType != 0">
+            <div class="rightlist_input" v-if="data.currentSelectType != 0" ref="resizableDivY" @mousedown="onMouseDownResizerY"  >
+                <div class="resizer resizerY"></div>
+
                 <div class="input_tool">
 
                     <div class="tool_item">
@@ -248,7 +254,7 @@
                     </div>
                 </div>
                 <textarea ref="inputtestarea" @click="clickinputevent" v-show="!data.soundrecorddata.visible" cols="30"
-                    rows="10" v-model="data.input"></textarea>
+                    rows="6" v-model="data.input"></textarea>
                 <div class="tool_sound" v-show="data.soundrecorddata.visible">
                     <el-icon :class="{ 'sound_record_active': data.soundrecorddata.recordStatus }">
                         <Microphone />
@@ -259,7 +265,7 @@
                     v-show="!data.soundrecorddata.visible">
                     发送
                 </div>
-                <div @click="testsend" class="sendbtn"
+                <!-- <div @click="testsend" class="sendbtn"
                     :style="{ color: data.input ? 'white' : 'rgba(255,255,255,0.4)', 'right': '200px' }"
                     v-show="!data.soundrecorddata.visible">
                     性能测试
@@ -268,8 +274,10 @@
                     :style="{ color: data.input ? 'white' : 'rgba(255,255,255,0.4)', 'right': '400px' }"
                     v-show="!data.soundrecorddata.visible">
                     停止测试
-                </div>
+                </div> -->
             </div>
+
+
         </div>
 
         <!-- 申请加入群聊对话框 -->
@@ -343,7 +351,7 @@
 
 import JSEncrypt from 'jsencrypt'
 import { fileurl, wsurl } from './main'
-import { toRef, onMounted, reactive, ref, watch, computed } from 'vue';
+import { toRef, onMounted, onUnmounted, reactive, ref, watch, computed } from 'vue';
 import useCounter from './store/common'
 import { ElMessageBox, UploadFile, UploadFiles, UploadProps, UploadRawFile } from 'element-plus';
 import {
@@ -438,6 +446,8 @@ const keyPair = new JSEncrypt()  //用于加密
 const msglist: any = ref(null)
 const uploadimg: any = ref(null)
 const inputtestarea: any = ref(null)
+const resizableDiv: any = ref(null);  //
+const resizableDivY: any = ref(null);  //
 let reconnectnum = 0
 
 onMounted(() => {
@@ -452,6 +462,10 @@ onMounted(() => {
         }, 1000)
     }
 })
+
+onUnmounted(() => {
+    // window.removeEventListener('mousedown', onMouseDownResizer);
+});
 
 const data = reactive({
     ws: {
@@ -628,17 +642,17 @@ const filterapplyadduserlist = computed(() => data.userdata.ApplyUserList ? data
 
 let TobeConfirmedMessage: Array<MessageListitem> = reactive([])
 
-let inn: NodeJS.Timer
-const testsend = async () => {
-    inn = setInterval(() => {
-        for (let i = 0; i < JSON.parse(data.input); i++) {
-            send()
-        }
-    }, 1000)
-}
-const closetest = () => {
-    clearInterval(inn)
-}
+// let inn: NodeJS.Timer
+// const testsend = async () => {
+//     inn = setInterval(() => {
+//         for (let i = 0; i < JSON.parse(data.input); i++) {
+//             send()
+//         }
+//     }, 1000)
+// }
+// const closetest = () => {
+//     clearInterval(inn)
+// }
 
 // 发送消息
 const send = async () => {
@@ -1551,6 +1565,8 @@ const initListener = () => {
 
     })
 
+    // window.addEventListener('mousedown', onMouseDownResizer);
+
 }
 
 // 发送邮箱验证码
@@ -1948,8 +1964,56 @@ const selectemoji = async (emoji) => {
     data.inputfocusposition += 2
     inputtestarea.value.selectionStart = data.inputfocusposition
     inputtestarea.value.selectionEnd = data.inputfocusposition
-
 }
+
+
+// 
+let isResizing = ref(false)
+const onMouseDownResizerX = (e) => {
+    if (e.target.classList.contains('resizer')) {
+        console.log("开始监听X");
+        isResizing.value = true;
+        document.addEventListener('mousemove', onMouseMoveX);
+        document.addEventListener('mouseup', onMouseUp);
+    }
+};
+
+const onMouseDownResizerY = (e) => {
+    if (e.target.classList.contains('resizer')) {
+        console.log("开始监听Y");
+        
+        isResizing.value = true;
+        document.addEventListener('mousemove', onMouseMoveY);
+        document.addEventListener('mouseup', onMouseUp);
+    }
+};
+
+const onMouseMoveX = (e:MouseEvent) => {
+    
+    if (isResizing.value) {
+        const resizable = resizableDiv.value;
+        // let offset = Math.abs( window.innerWidth -  e.clientX  +1 )
+        let offset = Math.abs( e.clientX  +1 )
+        resizable.style.width =offset + 'px';
+        // resizable.style.height = e.clientY - resizable.offsetTop + 'px';
+    }
+};
+const onMouseMoveY = (e:MouseEvent) => {
+    if (isResizing.value) {
+        const resizable = resizableDivY.value;
+        // let offset = Math.abs( window.innerHeight -  e.clientY  +1 )
+        let offset = window.innerHeight -  e.clientY  +1 
+        resizable.style.height =offset + 'px';
+        // resizable.style.height = e.clientY - resizable.offsetTop + 'px';
+    }
+};
+
+const onMouseUp = () => {
+    isResizing.value = false;
+    document.removeEventListener('mousemove', onMouseMoveX);
+    document.removeEventListener('mousemove', onMouseMoveY);
+    document.removeEventListener('mouseup', onMouseUp);
+};
 
 export type GroupInfo = {
     Avatar: string

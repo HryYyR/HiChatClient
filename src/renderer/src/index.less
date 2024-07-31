@@ -135,8 +135,10 @@
 
 
     .left_list {
+        position: relative;
         height: 100%;
         width: 32%;
+        min-width: 250px;
         border-top: 1px solid @borderc;
         border-right: 1px solid @borderc;
         display: flex;
@@ -300,7 +302,7 @@
                 position: absolute;
                 height: 100%;
                 margin-bottom: 40px;
-                width: 32vw;
+                width: 100%;
                 transition: 0.2s;
             }
 
@@ -400,9 +402,12 @@
     .right_list {
         height: 100%;
         width: 68%;
+        min-width: 400px;
         border-top: 1px solid @borderc;
         display: flex;
         flex-direction: column;
+        position: relative;
+        flex: 1;
 
         .rightlist_background {
             font-size: 4rem;
@@ -413,6 +418,7 @@
 
         .rightlist_option {
             height: 70px;
+            min-height: 70px;
             display: flex;
             align-items: center;
             font-size: 1.2rem;
@@ -472,15 +478,16 @@
             position: relative;
             padding: 20px 20px 0 20px;
             overflow: auto;
-            height: calc(70% - 70px);
-
-
-
+            // height: calc(70% - 70px);
+            min-height: 200px;
+            flex: 1;
         }
 
         .rightlist_input {
             height: 30%;
             border-top: 1px solid @borderc;
+            position: relative;
+            min-height: 180px;
 
             .input_tool {
                 height: 25px;
@@ -493,9 +500,12 @@
                     font-size: 1.5rem;
                     color: #3a3b3c;
                     margin-right: 10px;
+                    cursor: pointer;
+                    user-select: none;
+                    line-height: 2rem;
 
-                    & :hover {
-                        color: #8795ff;
+                    & svg:hover {
+                        background-color: rgba(85, 85, 85, 0.2);
                     }
 
                 }
@@ -532,8 +542,8 @@
                 right: 30px;
                 bottom: 15px;
                 background-color: rgb(64, 179, 255);
-                padding: 5px 30px;
-                font-size: 1rem;
+                padding: 3px 20px;
+                font-size: 0.9rem;
                 font-weight: 600;
                 color: white;
                 border-radius: 5px;
@@ -545,8 +555,29 @@
                 }
             }
         }
+
     }
 
+
+}
+.resizer{
+    position: absolute;
+}
+.resizerX{
+    width: 6px;
+    height: 100%;
+    right: 0;
+    top: 0;
+    z-index: 99;
+    cursor:e-resize;
+
+}
+.resizerY{
+    height: 6px;
+    width:  100%;
+    left: 0;
+    top: 0;
+    cursor:n-resize;
 
 }
 
@@ -558,7 +589,7 @@
     overflow-x: hidden;
     margin-top: -200px;
     padding: 5px;
-    background-color: rgb(255, 255, 255);
+    background-color: rgb(255, 255, 255) ;
     box-shadow: 0px 0px 20px 3px rgb(168, 168, 168);
     border-radius: 5px;
 
