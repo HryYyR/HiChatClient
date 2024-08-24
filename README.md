@@ -1,2 +1,2 @@
 # Client
-Electron(vue3+typescript)
+HiCHat 是一款基于 Vue3.2 和 Electron 构建的即时通讯系统前端应用。本项目致力于为用户提供流畅、安全的沟通体验。在前端部分，主要负责实现用户界面、交互逻辑以及与后端微服务的通信。
