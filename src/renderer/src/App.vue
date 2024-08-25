@@ -21,41 +21,19 @@
     </div>
 
     <!-- 主面板 -->
-    <div v-show="data.islogin" class="index" :style="{userSelect:isResizing?'none':'auto'}" v-loading="data.wsconnecting">
-        <div class="left_list"  ref="resizableDiv" @mousedown="onMouseDownResizerX">
+    <div v-show="data.islogin" class="index" :style="{ userSelect: isResizing ? 'none' : 'auto' }"
+        v-loading="data.wsconnecting">
+        <div class="left_list" ref="resizableDiv" @mousedown="onMouseDownResizerX">
             <div class="resizer resizerX"></div>
 
             <UserInfoVue @edituserdata="edituserdata" @userdetaildialoghandleClose="userdetaildialoghandleClose"
                 :UserDetailDialogVisible="data.userdetaildata.UserDetailDialogVisible" :userdata="data.userdata" />
 
             <!-- 群工具 -->
-            <div class="group_tools">
-                <el-input size="large" v-model="data.searchdata.searchinput" placeholder="搜索" clearable></el-input>
-                <el-dropdown trigger="click" v-show="data.searchdata.searchinput.trim().length == 0">
-                    <el-icon class="open_addgroup_dialog_btn">
-                        <Plus />
-                    </el-icon>
-                    <template #dropdown>
-                        <el-dropdown-menu>
-                            <el-dropdown-item>
-                                <div @click="handlesearchfrienddialog">
-                                    添加好友
-                                </div>
-                            </el-dropdown-item>
-                            <el-dropdown-item>
-                                <div @click="data.addgroupdata.addGroupDialogVisible = true">
-                                    添加群聊
-                                </div>
-                            </el-dropdown-item>
-                            <el-dropdown-item>
-                                <div @click="data.creategroupdata.createGroupDialogVisible = true">
-                                    创建群聊
-                                </div>
-                            </el-dropdown-item>
-                        </el-dropdown-menu>
-                    </template>
-                </el-dropdown>
-            </div>
+            <FuncBarVue :searchinput="data.searchdata.searchinput"
+                @changeadd-group-dialog-visible="data.addgroupdata.addGroupDialogVisible = true"
+                @changecreate-group-dialog-visible="data.creategroupdata.createGroupDialogVisible = true"
+                @handlesearchfrienddialog="handlesearchfrienddialog" />
 
             <div class="search_result" v-if="data.searchdata.searchinput.trim().length != 0">
                 <p v-for="(item) in data.searchdata.searchResult" :key="item.name" @click="ToSearchTarget(item)">
@@ -126,7 +104,6 @@
         </div>
 
         <div class="right_list">
-
             <p v-if="data.currentSelectType == 0" class="rightlist_background">HiChat</p>
 
             <!-- friend标题栏 -->
@@ -204,7 +181,8 @@
 
             </div>
 
-            <div class="rightlist_input" v-if="data.currentSelectType != 0" ref="resizableDivY" @mousedown="onMouseDownResizerY"  >
+            <div class="rightlist_input" v-if="data.currentSelectType != 0" ref="resizableDivY"
+                @mousedown="onMouseDownResizerY">
                 <div class="resizer resizerY"></div>
 
                 <div class="input_tool">
@@ -352,6 +330,8 @@ import {
 import HeaderVue from './components/header.vue'
 import LoginVue from './components/login/login.vue'
 import RegisterVue from './components/register/register.vue'
+
+import FuncBarVue from './components/funcbar/funcbar.vue'
 
 import UserInfoVue from './components/userinfo/userinfo.vue'
 import GroupItemVue from './components/groupitem/groupitem.vue'
@@ -1037,10 +1017,6 @@ const handleMsg = (msg: any) => {
         console.log(msg);
         win.api.createRemoteVideo(data.userdata.ID, "receiver")
     }
-
-    // const AckMsg = async () => {
-    //     data.AckFlag--
-    // }
 
     const typelist = {
         1: DefaultGroupMsg,
@@ -1966,7 +1942,7 @@ const onMouseDownResizerX = (e) => {
 const onMouseDownResizerY = (e) => {
     if (e.target.classList.contains('resizer')) {
         console.log("开始监听Y");
-        
+
         isResizing.value = true;
         document.addEventListener('mousemove', onMouseMoveY);
         document.addEventListener('mouseup', onMouseUp);
@@ -1974,21 +1950,21 @@ const onMouseDownResizerY = (e) => {
 };
 
 // 更改布局X轴
-const onMouseMoveX = (e:MouseEvent) => {
-    
+const onMouseMoveX = (e: MouseEvent) => {
+
     if (isResizing.value) {
         const resizable = resizableDiv.value;
-        let offset = Math.abs( e.clientX  +1 )
-        resizable.style.width =offset + 'px';
+        let offset = Math.abs(e.clientX + 1)
+        resizable.style.width = offset + 'px';
     }
 };
 
 // 更改布局Y轴
-const onMouseMoveY = (e:MouseEvent) => {
+const onMouseMoveY = (e: MouseEvent) => {
     if (isResizing.value) {
         const resizable = resizableDivY.value;
-        let offset = window.innerHeight -  e.clientY  +1 
-        resizable.style.height =offset + 'px';
+        let offset = window.innerHeight - e.clientY + 1
+        resizable.style.height = offset + 'px';
     }
 };
 
