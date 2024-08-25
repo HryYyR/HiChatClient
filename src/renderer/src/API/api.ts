@@ -54,7 +54,7 @@ export function registerapi(username: string, password: string, email: string, e
         email: email,
         code: emailcode
     }
-
+    
     return axios({
         url: apistaticurl + "/register",
         method: "POST",
@@ -231,9 +231,9 @@ export function getimgorigindataapi(imgurl: string) {
     })
 }
 
-// 获取图片源数据
+// ai
 export function aimessageapi(msg: string,msgtype:number) {
-    axios.defaults.timeout = 10000
+    axios.defaults.timeout = 20000
     return axios({
         url: apistaticurl + "/user/aimessage",
         method: "post",

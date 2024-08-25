@@ -6,24 +6,7 @@
         <LoginVue :logindata="data.logindata" @login="login" />
 
         <!-- 注册 -->
-        <div class="view_container register_container">
-            <el-input class="view_input" v-model="data.registerdata.username" placeholder="用户名(由字母和数字组成,不能低于6位)"
-                size="large" clearable></el-input>
-            <el-input class="view_input" type="password" show-password v-model="data.registerdata.password"
-                placeholder="密码(不能低于6位)" size="large" clearable></el-input>
-            <el-input class="view_input" type="password" show-password v-model="data.registerdata.checkpassword"
-                placeholder="确认密码" size="large" clearable></el-input>
-            <el-input class="view_input" v-model="data.registerdata.email" placeholder="邮箱" size="large"
-                clearable></el-input>
-            <div class="view_input" style="display: flex;">
-                <el-input placeholder="邮箱验证码" v-model="data.registerdata.emailcode" size="large"
-                    style="margin-right: 10px;"></el-input><el-button type="success" size="large" @click="sendemailCode"
-                    :disabled="data.registerdata.sendemailbtnvisible">{{ data.registerdata.sendcodebtn }}</el-button>
-
-
-            </div>
-            <div class="btn" @click="register">注册</div>
-        </div>
+        <RegisterVue :registerdata="data.registerdata" @register="register" @sendemailcode="sendemailCode" />
 
         <!-- 公共组件 -->
         <div class="changeview" @click="toregister">{{ !data.logindata.offset ? "去注册" : "去登录" }}<el-icon
@@ -368,6 +351,7 @@ import {
 } from './utils/utils'
 import HeaderVue from './components/header.vue'
 import LoginVue from './components/login/login.vue'
+import RegisterVue from './components/register/register.vue'
 
 import UserInfoVue from './components/userinfo/userinfo.vue'
 import GroupItemVue from './components/groupitem/groupitem.vue'
@@ -446,8 +430,8 @@ const keyPair = new JSEncrypt()  //用于加密
 const msglist: any = ref(null)
 const uploadimg: any = ref(null)
 const inputtestarea: any = ref(null)
-const resizableDiv: any = ref(null);  //
-const resizableDivY: any = ref(null);  //
+const resizableDiv: any = ref(null);  //X轴布局更改元素
+const resizableDivY: any = ref(null);  //Y轴布局更改元素
 let reconnectnum = 0
 
 onMounted(() => {
@@ -1967,7 +1951,7 @@ const selectemoji = async (emoji) => {
 }
 
 
-// 
+//  监听更改布局X轴的鼠标事件
 let isResizing = ref(false)
 const onMouseDownResizerX = (e) => {
     if (e.target.classList.contains('resizer')) {
@@ -1978,6 +1962,7 @@ const onMouseDownResizerX = (e) => {
     }
 };
 
+//  监听更改布局Y轴的鼠标事件
 const onMouseDownResizerY = (e) => {
     if (e.target.classList.contains('resizer')) {
         console.log("开始监听Y");
@@ -1988,26 +1973,26 @@ const onMouseDownResizerY = (e) => {
     }
 };
 
+// 更改布局X轴
 const onMouseMoveX = (e:MouseEvent) => {
     
     if (isResizing.value) {
         const resizable = resizableDiv.value;
-        // let offset = Math.abs( window.innerWidth -  e.clientX  +1 )
         let offset = Math.abs( e.clientX  +1 )
         resizable.style.width =offset + 'px';
-        // resizable.style.height = e.clientY - resizable.offsetTop + 'px';
-    }
-};
-const onMouseMoveY = (e:MouseEvent) => {
-    if (isResizing.value) {
-        const resizable = resizableDivY.value;
-        // let offset = Math.abs( window.innerHeight -  e.clientY  +1 )
-        let offset = window.innerHeight -  e.clientY  +1 
-        resizable.style.height =offset + 'px';
-        // resizable.style.height = e.clientY - resizable.offsetTop + 'px';
     }
 };
 
+// 更改布局Y轴
+const onMouseMoveY = (e:MouseEvent) => {
+    if (isResizing.value) {
+        const resizable = resizableDivY.value;
+        let offset = window.innerHeight -  e.clientY  +1 
+        resizable.style.height =offset + 'px';
+    }
+};
+
+// 取消监听更改布局事件
 const onMouseUp = () => {
     isResizing.value = false;
     document.removeEventListener('mousemove', onMouseMoveX);
