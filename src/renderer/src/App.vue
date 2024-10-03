@@ -33,7 +33,9 @@
             <FuncBarVue :searchinput="data.searchdata.searchinput"
                 @changeadd-group-dialog-visible="data.addgroupdata.addGroupDialogVisible = true"
                 @changecreate-group-dialog-visible="data.creategroupdata.createGroupDialogVisible = true"
-                @handlesearchfrienddialog="handlesearchfrienddialog" />
+                @handlesearchfrienddialog="handlesearchfrienddialog"
+                @changesearchinput ="(searchinput)=>{data.searchdata.searchinput = searchinput}"
+                />
 
             <div class="search_result" v-if="data.searchdata.searchinput.trim().length != 0">
                 <p v-for="(item) in data.searchdata.searchResult" :key="item.name" @click="ToSearchTarget(item)">
@@ -415,7 +417,8 @@ const resizableDivY: any = ref(null);  //Y轴布局更改元素
 let reconnectnum = 0
 
 onMounted(() => {
-    win.api.settitle()
+    win.api && win.api.settitle()
+    
     initListener()
 
     data.logindata.username = localStorage.getItem("username") || ""
@@ -823,7 +826,7 @@ const login = () => {
 
 
     }).catch((err: AxiosError) => {
-        let errinfo = "发生了未知的错误"
+        let errinfo = "发生了未知的错误: " + err
         console.log(err);
         if (err.status && err.status >= 500) {
             errinfo = "网络开了点小差,请稍后重试!"
@@ -859,7 +862,7 @@ const outlogin = (immediately: boolean = false) => {
 
 }
 const loginOutAndClearInfo = () => {
-    win.api.backtologin()
+    win.api && win.api.backtologin()
     setTimeout(() => {
         data.islogin = false
     }, 50);
@@ -914,7 +917,7 @@ const handleMsg = (msg: any) => {
 
                 // notification
                 if (msg.UserID != data.userdata.ID) {
-                    win.api.notification(group.GroupInfo.GroupName, msg.MsgType == 1 ? msg.Msg : "[媒体消息]") //系统通知
+                    win.api && win.api.notification(group.GroupInfo.GroupName, msg.MsgType == 1 ? msg.Msg : "[媒体消息]") //系统通知
                 }
             }
         })
@@ -1006,7 +1009,7 @@ const handleMsg = (msg: any) => {
                     i.UnreadMessage++
                 }
             });
-            win.api.notification(msg.UserName, msg.Msg) //系统通知
+            win.api && win.api.notification(msg.UserName, msg.Msg) //系统通知
         }
         // console.log(data.userdata.FriendList);
         return
@@ -1015,7 +1018,7 @@ const handleMsg = (msg: any) => {
     // 1v1视频通话
     const UserToUserRemoteVideoCallMsg = async (msg: FriendMessageListitem) => {
         console.log(msg);
-        win.api.createRemoteVideo(data.userdata.ID, "receiver")
+        win.api && win.api.createRemoteVideo(data.userdata.ID, "receiver")
     }
 
     const typelist = {
@@ -1649,7 +1652,7 @@ const connectws = async () => {
             // 设置显示
             setTimeout(() => {
                 data.loginloading = false
-                win.api.changWindowSize()
+                win.api && win.api.changWindowSize()
                 data.islogin = true
             }, 1000);
 
@@ -1862,7 +1865,7 @@ const ToSearchTarget = (item: MatchingItem) => {
 const startUserToUserVideoCall = async () => {
     startusertouservideocall(data.currentfrienddata.Id).then(res => {
         console.log(res);
-        win.api.createRemoteVideo(data.userdata.ID, "starter")
+        win.api && win.api.createRemoteVideo(data.userdata.ID, "starter")
     }).catch(err => {
         if (err.response.status == 400) {
             tip("error", "对方不在线")
