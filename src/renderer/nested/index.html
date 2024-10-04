@@ -141,8 +141,8 @@
 
         // localhost
         // 192.168.137.1
-        // const ws = new WebSocket('ws://localhost/streammedia?id=' + userid)
-        const ws = new WebSocket('ws://192.168.137.1/streammedia?id=' + userid)
+        const ws = new WebSocket('ws://127.0.0.1/streammedia?id=' + userid)
+        // const ws = new WebSocket('ws://192.168.137.1/streammedia?id=' + userid)
         ws.binaryType = "arraybuffer";
 
         const remoteVideo = document.querySelector('#remoteVideo');

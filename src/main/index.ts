@@ -8,9 +8,9 @@ let remoteVidoeWindow: BrowserWindow
 
 let PublicNotification: Notification
 
-let tray:Tray
+let tray: Tray
 
-let mainWindow:BrowserWindow
+let mainWindow: BrowserWindow
 
 function createWindow(): void {
   // Create the browser window.
@@ -43,6 +43,9 @@ function createWindow(): void {
     // mainWindow.setSize(1050, 700)
     mainWindow.setSize(800, 500)
 
+  }
+
+  function setMainWindowPosition(mainWindow: BrowserWindow) {
     mainWindow.center()
   }
 
@@ -75,7 +78,14 @@ function createWindow(): void {
     } else {
       initMainWindow(mainWindow);
     }
+  })
 
+  ipcMain.on('setMainWindowPosition', (_, delay = 500) => {
+    if (delay) {
+      delayShowWindow(setMainWindowPosition, delay);
+    } else {
+      setMainWindowPosition(mainWindow);
+    }
   })
 
   ipcMain.on('backtologin', (_, delay = 500) => {
@@ -178,7 +188,7 @@ function createWindow(): void {
   }
 }
 
-function setTray(){
+function setTray() {
   tray = new Tray(icon)
   tray.setToolTip('HiChat')
   tray.on('click', () => {
@@ -222,7 +232,7 @@ app.whenReady().then(() => {
   PublicNotification = new Notification({
     title: "",
     body: "",
-    silent:true,
+    silent: true,
   })
 
   setTray()

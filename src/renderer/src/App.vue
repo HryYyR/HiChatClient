@@ -34,8 +34,7 @@
                 @changeadd-group-dialog-visible="data.addgroupdata.addGroupDialogVisible = true"
                 @changecreate-group-dialog-visible="data.creategroupdata.createGroupDialogVisible = true"
                 @handlesearchfrienddialog="handlesearchfrienddialog"
-                @changesearchinput ="(searchinput)=>{data.searchdata.searchinput = searchinput}"
-                />
+                @changesearchinput="(searchinput) => { data.searchdata.searchinput = searchinput }" />
 
             <div class="search_result" v-if="data.searchdata.searchinput.trim().length != 0">
                 <p v-for="(item) in data.searchdata.searchResult" :key="item.name" @click="ToSearchTarget(item)">
@@ -129,7 +128,8 @@
                     :userdata="data.userdata"
                     :pretime="(index != 0 && data.currentfrienddata.MessageList.length > 1) ? data.currentfrienddata.MessageList[index - 1] : data.currentfrienddata.MessageList[index]" />
 
-                <div class="message_unread" @click="scrolltonew(0, true)" v-show="data.messageunreaddata.unreadnumber != 0">
+                <div class="message_unread" @click="scrolltonew(0, true)"
+                    v-show="data.messageunreaddata.unreadnumber != 0">
                     <span>
                         {{ data.messageunreaddata.unreadnumber }}条未读
                     </span>
@@ -144,8 +144,10 @@
             <div class="rightlist_option"
                 v-if="data.currentSelectType == 1 && JSON.stringify(data.currentgroupdata) != '{}'">
                 <p>
-                    {{ JSON.stringify(data.currentgroupdata) != '{}' ? data.currentgroupdata.GroupInfo.GroupName : "" }} ({{
-                        JSON.stringify(data.currentgroupdata) != '{}' ? data.currentgroupdata.GroupInfo.MemberCount : '' }})</p>
+                    {{ JSON.stringify(data.currentgroupdata) != '{}' ? data.currentgroupdata.GroupInfo.GroupName : "" }}
+                    ({{
+                        JSON.stringify(data.currentgroupdata) != '{}' ? data.currentgroupdata.GroupInfo.MemberCount : '' }})
+                </p>
                 <el-icon class="moregroupinfo" @click="changemoregroupinfodarwer">
                     <MoreFilled />
                 </el-icon>
@@ -153,8 +155,8 @@
 
             <!-- 群聊详细信息 -->
             <el-drawer v-model="data.moregroupinfo.moregroupinfodrawer"
-                :title="data.currentgroupdata.GroupInfo ? data.currentgroupdata.GroupInfo.GroupName : ''" direction="rtl"
-                size="300px" append-to-body>
+                :title="data.currentgroupdata.GroupInfo ? data.currentgroupdata.GroupInfo.GroupName : ''"
+                direction="rtl" size="300px" append-to-body>
                 <MoreGroupInfoDrawerDetail :groupinfo="data.currentgroupdata"
                     :memberlistdetaildarwer="data.moregroupinfo.memberlistdetaildarwer" :userid="data.userdata.ID"
                     :memberlistdata="data.moregroupinfo.memberlistdata" @changequitgroupdialog="changequitgroupdialog"
@@ -171,7 +173,8 @@
                     :userdata="data.userdata" :currentgroupdata="data.currentgroupdata"
                     @openMsgHandleMenu="openMsgHandleMenu" @lookuserinfo="lookuserinfo" />
 
-                <div class="message_unread" @click="scrolltonew(0, true)" v-show="data.messageunreaddata.unreadnumber != 0">
+                <div class="message_unread" @click="scrolltonew(0, true)"
+                    v-show="data.messageunreaddata.unreadnumber != 0">
                     <span>
                         {{ data.messageunreaddata.unreadnumber }}条未读
                     </span>
@@ -191,9 +194,10 @@
 
                     <div class="tool_item">
                         <Vueemojiicon @click="data.displayemojilist = !data.displayemojilist" />
-                        <Vue3EmojiPicker :static-texts="{ placeholder: '', skinTone: '' }" v-show="data.displayemojilist"
-                            :theme='data.emojitheme' :hide-search="true" :hide-group-icons="true" :hide-group-names="true"
-                            :disable-sticky-group-names="true" :disable-skin-tones="true"
+                        <Vue3EmojiPicker :static-texts="{ placeholder: '', skinTone: '' }"
+                            v-show="data.displayemojilist" :theme='data.emojitheme' :hide-search="true"
+                            :hide-group-icons="true" :hide-group-names="true" :disable-sticky-group-names="true"
+                            :disable-skin-tones="true"
                             :disabled-groups="['food_drink', 'activities', 'travel_places', 'objects', 'symbols', 'flags', 'animals_nature', 'ghost', 'snowboarder', 'gem']"
                             class="emojipicker" :native="true" @select="selectemoji" />
                     </div>
@@ -228,7 +232,7 @@
                     v-show="!data.soundrecorddata.visible">
                     发送
                 </div>
-                <!-- <div @click="testsend" class="sendbtn"
+                <div @click="testsend" class="sendbtn"
                     :style="{ color: data.input ? 'white' : 'rgba(255,255,255,0.4)', 'right': '200px' }"
                     v-show="!data.soundrecorddata.visible">
                     性能测试
@@ -237,7 +241,7 @@
                     :style="{ color: data.input ? 'white' : 'rgba(255,255,255,0.4)', 'right': '400px' }"
                     v-show="!data.soundrecorddata.visible">
                     停止测试
-                </div> -->
+                </div>
             </div>
 
 
@@ -295,8 +299,9 @@
             @setcurrentfriendlist="setcurrentfriendlist" @addusertofriend="addusertofriend" />
 
         <!-- 搜索好友对话框 -->
-        <SearchFriendDialog :searchinput="data.searchfrienddata.searchinput" :friendlist="data.searchfrienddata.friendlist"
-            :visible="data.searchfrienddata.visible" :targetfrienddata="data.searchfrienddata.targetfrienddata"
+        <SearchFriendDialog :searchinput="data.searchfrienddata.searchinput"
+            :friendlist="data.searchfrienddata.friendlist" :visible="data.searchfrienddata.visible"
+            :targetfrienddata="data.searchfrienddata.targetfrienddata"
             @handlesearchfrienddialog="handlesearchfrienddialog" @preapplyaddfriend="preapplyaddfriend"
             @searchfriend="searchfriend" @handlesearchfriendinput="handlesearchfriendinput" />
 
@@ -418,7 +423,7 @@ let reconnectnum = 0
 
 onMounted(() => {
     win.api && win.api.settitle()
-    
+
     initListener()
 
     data.logindata.username = localStorage.getItem("username") || ""
@@ -447,6 +452,7 @@ const data = reactive({
     EncryptedSymmetricKey: <Uint8Array>new Uint8Array(),
     // AckFlag: 0,
     islogin: false, //是否登录
+    isrelogin: false, //是否为断线重连,默认为false，ws断开为true，重连成功为false，重连失败为false
     loginloading: false, //是否加载中
     loadingmessagelist: false, //加载消息列表
     loadingmsaageburial: true, //是否开启加载消息,在切换窗口时设为true
@@ -609,17 +615,17 @@ const filterapplyadduserlist = computed(() => data.userdata.ApplyUserList ? data
 
 let TobeConfirmedMessage: Array<MessageListitem> = reactive([])
 
-// let inn: NodeJS.Timer
-// const testsend = async () => {
-//     inn = setInterval(() => {
-//         for (let i = 0; i < JSON.parse(data.input); i++) {
-//             send()
-//         }
-//     }, 1000)
-// }
-// const closetest = () => {
-//     clearInterval(inn)
-// }
+let inn: NodeJS.Timer
+const testsend = async () => {
+    inn = setInterval(() => {
+        for (let i = 0; i < JSON.parse(data.input); i++) {
+            send()
+        }
+    }, 1000)
+}
+const closetest = () => {
+    clearInterval(inn)
+}
 
 // 发送消息
 const send = async () => {
@@ -671,7 +677,7 @@ const send = async () => {
         const encryptedData = await encryptAes(data.wsidentify.aeskey, msgstr)
         data.ws?.wsconn?.send(encryptedData)
     }
-    data.input = ""
+    // data.input = ""
 }
 
 // 设置监听当前窗口
@@ -879,6 +885,7 @@ const loginOutAndClearInfo = () => {
     data.addgroupdata.addgroupsearchlist = <GroupinfoList>[]
     data.soundrecorddata.visible = false
     data.addUserdata.targetUserData = {}
+    TodoMessagequeue.length = 0
 }
 
 
@@ -1640,7 +1647,7 @@ const onErrorUploadImg = (response: any, uploadFile: UploadFile, uploadFiles: Up
 }
 
 
-const TodoMessagequeue: Array<string> = []
+let TodoMessagequeue: Array<string> = []
 // 连接ws
 const connectws = async () => {
     data.wsidentify.aeskey = await generateAndStoreKey()
@@ -1652,17 +1659,22 @@ const connectws = async () => {
             // 设置显示
             setTimeout(() => {
                 data.loginloading = false
-                win.api && win.api.changWindowSize()
+                if (!data.isrelogin && win.api) {
+                    win.api.changWindowSize()
+                    win.api.setMainWindowPosition()
+                }
                 data.islogin = true
             }, 1000);
 
             console.log("connect success!");
+            data.isrelogin = false
             data.wsconnecting = false
             reconnectnum = 0
         }
 
     data.ws.wsconn.onclose = function (evt: any) {
         data.wsconnecting = true
+        data.isrelogin = true
         data.wsidentify = {
             publickey: "string",
             wsmsgindex: 0,
@@ -1678,6 +1690,7 @@ const connectws = async () => {
             outlogin(true)
             data.wsconnecting = false
             data.loginloading = false
+            data.isrelogin = false
             reconnectnum = 0
             return
         }
@@ -1995,6 +2008,6 @@ export type GroupInfo = {
 }
 
 </script>
-<style  lang="less">
+<style lang="less">
 @import url('./index.less');
 </style>

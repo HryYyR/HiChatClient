@@ -2,19 +2,16 @@ import axios from 'axios'
 import { Md5 } from 'ts-md5';
 import CryptoJS  from 'crypto-js'
 import { tip } from './../utils/utils';
-// const defaulturl = "http://localhost"
-// const apifileurl = "http://localhost"
 
+const defaulturl = "http://127.0.0.1"
+const apifileurl = "http://127.0.0.1"
+const apistaticurl = "http://127.0.0.1"
+axios.defaults.baseURL = "http://127.0.0.1"
 
-// const defaulturl = "http://localhost"
-// const apifileurl = "http://localhost"
-// const apistaticurl = "http://localhost"
-// axios.defaults.baseURL = "http://localhost"
-
-const defaulturl = "http://192.168.137.1"
-const apifileurl = "http://192.168.137.1"
-const apistaticurl = "http://192.168.137.1"
-axios.defaults.baseURL = "http://192.168.137.1"
+// const defaulturl = "http://192.168.137.1"
+// const apifileurl = "http://192.168.137.1"
+// const apistaticurl = "http://192.168.137.1"
+// axios.defaults.baseURL = "http://192.168.137.1"
 
 // 登录
 export function loginapi(username: string, password: string) {
@@ -255,7 +252,7 @@ export function searchGroupapi(text: string) {
     const msg = {
         searchstr: text
     }
-    return axios.post("/ws/user/searchGroup", msg)
+    return axios.post( apistaticurl +"/group/searchgroup", msg)
 }
 
 // 处理加入群聊

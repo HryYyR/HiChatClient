@@ -12,6 +12,9 @@ const api: api = {
   changWindowSize: () => {
     ipcRenderer.send('changWindowSize')
   },
+  setMainWindowPosition: () => {
+    ipcRenderer.send('setMainWindowPosition')
+  },
   toMin: () => {
     ipcRenderer.send('toMin')
   },
@@ -41,6 +44,7 @@ type api = {
   createRemoteVideo: Function
   closeRemoteVideo: Function
   notification: Function
+  setMainWindowPosition:Function
 }
 
 // Use `contextBridge` APIs to expose Electron APIs to
