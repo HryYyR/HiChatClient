@@ -79,7 +79,7 @@ export type MessageListitem = {
     Msg: string
     MsgType: number
     MsgStatus?:boolean
-    ReplyUserID: number
+    ReplyMsgID: number
     UserID: number
     UserName: string
     UserUUID?: string 

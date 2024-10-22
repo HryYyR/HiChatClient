@@ -19,4 +19,5 @@
 <style scoped lang="less">
 .icon:hover {
         color: skyblue;
-}</style>
+}
+</style>

@@ -1,8 +1,8 @@
 <template>
     <el-dialog @close="beforeCloseEvent" v-model="data.isvisible" title="添加好友" width="40%">
         <div style="display: flex;">
-            <el-input style="margin-right: 3px;" v-model="data.input" placeholder="支持模糊搜索" size="default" clearable
-                @change=""></el-input>
+            <el-input style="margin-right: 3px;" ref="adduserinputRef" v-model="data.input" placeholder="支持模糊搜索"
+                size="default" clearable @change=""></el-input>
             <el-button type="primary" size="default" @click="searchfriend">搜索</el-button>
         </div>
         <div>
@@ -19,14 +19,17 @@
 
 <script setup lang="ts">
 import { Friend } from '@renderer/models/models';
-import { reactive, PropType, watch } from 'vue';
+import { reactive, PropType, watch, ref } from 'vue';
 import { fileurl } from '../../main'
+
+const adduserinputRef: any = ref(null)
+
 const data = reactive({
     isvisible: false,
     input: ""
 })
 
-const emit = defineEmits(['handlesearchfrienddialog','searchfriend','preapplyaddfriend','handlesearchfriendinput'])
+const emit = defineEmits(['handlesearchfrienddialog', 'searchfriend', 'preapplyaddfriend', 'handlesearchfriendinput'])
 let props = defineProps({
     searchinput: {
         type: String,
@@ -46,12 +49,19 @@ let props = defineProps({
     }
 
 })
-watch(props, (_, nv) => {
+watch(props, async (_, nv) => {
     data.input = nv.searchinput
     data.isvisible = nv.visible
+
+    setTimeout(() => {
+        if (data.isvisible) {
+            adduserinputRef.value && adduserinputRef.value.focus()
+        }
+    }, 300);
+
 })
 watch(data, (_, nv) => {
-    emit('handlesearchfriendinput',nv.input)
+    emit('handlesearchfriendinput', nv.input)
 })
 const preapplyaddfriend = (item) => {
     emit('preapplyaddfriend', item)

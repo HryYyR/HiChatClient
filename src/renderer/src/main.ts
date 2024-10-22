@@ -24,6 +24,10 @@ axios.defaults.baseURL = "http://127.0.0.1"
 // export const staticurl = "192.168.137.1"
 // axios.defaults.baseURL = "http://192.168.137.1"
 
+// export const wsurl = "100.96.29.242"
+// export const fileurl = '100.96.29.242'
+// export const staticurl = "100.96.29.242"
+// axios.defaults.baseURL = "http://100.96.29.242"
 
 axios.defaults.timeout = 4000;
 

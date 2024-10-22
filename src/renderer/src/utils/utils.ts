@@ -100,7 +100,6 @@ export type MatchingItem = {
     number: string,
     type: 1 | 2
 }
-
 export function RegSearch(str: string, arr: Array<MatchingItem>): Array<MatchingItem> {
     const regexPattern = new RegExp(str, 'i')
     let matchingGroups: Array<MatchingItem> = []

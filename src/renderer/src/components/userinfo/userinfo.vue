@@ -11,6 +11,12 @@
         <el-dialog :modal="false" v-model="data.UserDetailDialogVisible" title="个人信息" width="50%"
             :before-close="userdetaildialoghandleClose">
 
+            <p><el-input v-model="props.userdata.ID" size="default" disabled>
+                    <template #prepend>
+                        ID:
+                    </template>
+                </el-input>
+            </p>
             <p><el-input v-model="props.userdata.NikeName" size="default" disabled>
                     <template #prepend>
                         昵称:
@@ -105,8 +111,8 @@ const userdetaildialoghandleClose = () => {
 
 const edituserdata = () => {
     console.log(data.city, data.age);
-    if(data.age==0 || data.age.toString().length >=4 || data.city =="" || data.city.length>20 || data.introduce.length ==0){
-        tip('error',"信息有误,请检查后重试!")
+    if(data.age < 1 || data.age >=200  ||  data.city.length == 0 || data.city.length> 100 || data.introduce.length ==0  || data.introduce.length >200 ){
+        tip('error',"信息不能为空或者超出长度限制,请检查后重试!")
         return
     }
     edituserdataapi(data.age, data.city,data.introduce).then(res => {

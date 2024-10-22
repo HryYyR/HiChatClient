@@ -148,9 +148,17 @@
                     ({{
                         JSON.stringify(data.currentgroupdata) != '{}' ? data.currentgroupdata.GroupInfo.MemberCount : '' }})
                 </p>
-                <el-icon class="moregroupinfo" @click="changemoregroupinfodarwer">
-                    <MoreFilled />
-                </el-icon>
+                <div class="rightlist_option_tool_list">
+                    <div class="addicon">
+                        <Vueaddicon />
+                    </div>
+                    <div>
+                        <el-icon class="moregroupinfo" @click="changemoregroupinfodarwer">
+                            <MoreFilled />
+                        </el-icon>
+                    </div>
+                </div>
+
             </div>
 
             <!-- 群聊详细信息 -->
@@ -232,7 +240,7 @@
                     v-show="!data.soundrecorddata.visible">
                     发送
                 </div>
-                <div @click="testsend" class="sendbtn"
+                <!--                 <div @click="testsend" class="sendbtn"
                     :style="{ color: data.input ? 'white' : 'rgba(255,255,255,0.4)', 'right': '200px' }"
                     v-show="!data.soundrecorddata.visible">
                     性能测试
@@ -241,7 +249,7 @@
                     :style="{ color: data.input ? 'white' : 'rgba(255,255,255,0.4)', 'right': '400px' }"
                     v-show="!data.soundrecorddata.visible">
                     停止测试
-                </div>
+                </div> -->
             </div>
 
 
@@ -358,6 +366,8 @@ import AiAssistantDialog from './components/ai_assistant_dialog/ai_assistant_dia
 import QuitIconVue from './components/icon-compoment/quit_icon.vue'
 
 import Vueemojiicon from './icon/emoji.vue'
+import Vueaddicon from "./icon/add-icon.vue"
+
 import Vue3EmojiPicker from 'vue3-emoji-picker';
 
 
@@ -425,10 +435,8 @@ onMounted(() => {
     win.api && win.api.settitle()
 
     initListener()
-
-    data.logindata.username = localStorage.getItem("username") || ""
-    data.logindata.password = localStorage.getItem("password") || ""
-    if (localStorage.getItem("autologin") == "1" && data.logindata.username && data.logindata.password) {
+    
+    if (data.logindata.autologin && data.logindata.username && data.logindata.password) {
         setTimeout(() => {
             login()
         }, 1000)
@@ -478,8 +486,9 @@ const data = reactive({
         UserDetailDialogVisible: true
     },
     logindata: { //登录信息
-        username: "",
-        password: "",
+        username: localStorage.getItem("username") || "",
+        password: localStorage.getItem("password") || "",
+        avatar:localStorage.getItem("avatar") || "",
         rememberpassword: localStorage.getItem("rememberpassword") == "1" ? true : false,
         autologin: localStorage.getItem("autologin") == "1" ? true : false,
         offset: false
@@ -559,15 +568,6 @@ const data = reactive({
 })
 
 
-watch(data.logindata, (newValue, _) => {
-    localStorage.setItem("rememberpassword", newValue.rememberpassword ? "1" : "0")
-    localStorage.setItem("autologin", newValue.autologin ? "1" : "0")
-    if (newValue.autologin) {
-        localStorage.setItem("rememberpassword", "1")
-        data.logindata.rememberpassword = true
-    }
-})
-
 watch(data, (nv) => {
     if (JSON.stringify(nv.currentfrienddata) == "{}" && JSON.stringify(nv.currentgroupdata) == "{}") {
         data.currentSelectType = 0
@@ -615,7 +615,7 @@ const filterapplyadduserlist = computed(() => data.userdata.ApplyUserList ? data
 
 let TobeConfirmedMessage: Array<MessageListitem> = reactive([])
 
-let inn: NodeJS.Timer
+/* let inn: NodeJS.Timer
 const testsend = async () => {
     inn = setInterval(() => {
         for (let i = 0; i < JSON.parse(data.input); i++) {
@@ -626,6 +626,7 @@ const testsend = async () => {
 const closetest = () => {
     clearInterval(inn)
 }
+ */
 
 // 发送消息
 const send = async () => {
@@ -649,7 +650,7 @@ const send = async () => {
                 Msg: data.input,
                 MsgType: 1,
                 IsReply: false,
-                ReplyUserID: 0,
+                ReplyMsgID: 0,
                 Context: [],
                 CreatedAt: new Date().toISOString()
             }
@@ -677,15 +678,16 @@ const send = async () => {
         const encryptedData = await encryptAes(data.wsidentify.aeskey, msgstr)
         data.ws?.wsconn?.send(encryptedData)
     }
-    // data.input = ""
+    data.input = ""
 }
 
 // 设置监听当前窗口
-const setcurrentlistener = () => {
+const setcurrentlistener = async () => {
     const { scrollHeight, scrollTop, offsetHeight } = msglist.value
-    // console.log(scrollHeight, scrollTop, offsetHeight);
     if (scrollTop < 150 && data.loadingmsaageburial) {
         if (data.currentSelectType == 1) {
+            let oldscrollHeight = msglist.value.scrollHeight
+
             data.loadingmsaageburial = false
             getgroupmessagelist(data.currentgroupdata.GroupInfo.ID, data.currentgroupdata.MessageList.length).then(res => {
                 if (res.data.data != null && res.data.data.length != 0) {
@@ -696,18 +698,22 @@ const setcurrentlistener = () => {
                         }
                         return g
                     })
-                    data.loadingmsaageburial = true
                 }
+                setTimeout(() => {
+                    msglist.value.scrollTop += msglist.value.scrollHeight - oldscrollHeight
+                }, 0);
             }).catch(err => {
                 console.log(err);
                 tip("error", "获取消息失败!")
-                setTimeout(() => {
-                    data.loadingmsaageburial = true
-                }, 1000);
             })
+            setTimeout(() => {
+                data.loadingmsaageburial = true
+            }, 1000);
         }
 
         if (data.currentSelectType == 2) {
+            let oldscrollHeight = msglist.value.scrollHeight
+
             data.loadingmsaageburial = false
             getgusermessagelist((data.currentfrienddata.Id), data.currentfrienddata.MessageList.length).then(res => {
                 if (res.data.data != null && res.data.data.length != 0) {
@@ -717,8 +723,12 @@ const setcurrentlistener = () => {
                         }
                         return f
                     })
+                    setTimeout(() => {
+                        msglist.value.scrollTop += msglist.value.scrollHeight - oldscrollHeight
+                    }, 0);
                     data.loadingmsaageburial = true
                 }
+
             }).catch(err => {
                 console.log(err);
                 tip("error", "获取消息失败!")
@@ -822,7 +832,8 @@ const login = () => {
         Store.token = res.data.token
         localStorage.setItem("token", res.data.token)
         localStorage.setItem("username", data.logindata.username)
-        if (data.logindata.rememberpassword) {
+        localStorage.setItem("avatar", data.userdata.Avatar)
+        if (localStorage.getItem("rememberpassword")=="1") {
             localStorage.setItem("password", data.logindata.password)
         } else {
             localStorage.removeItem("password")
@@ -922,7 +933,8 @@ const handleMsg = (msg: any) => {
                 data.grouplist[index] = data.grouplist[0]
                 data.grouplist[0] = temp
 
-                // notification
+                // notification 系统通知
+                // TODO 123
                 if (msg.UserID != data.userdata.ID) {
                     win.api && win.api.notification(group.GroupInfo.GroupName, msg.MsgType == 1 ? msg.Msg : "[媒体消息]") //系统通知
                 }
@@ -1924,7 +1936,6 @@ const changeAiAssistantDialogVisible = () => {
 // 点击testarea(input)触发
 const clickinputevent = () => {
     data.inputfocusposition = inputtestarea.value.selectionStart
-    console.log(data.inputfocusposition);
 }
 
 // 选择emoji时触发

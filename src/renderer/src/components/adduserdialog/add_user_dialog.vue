@@ -12,7 +12,7 @@
                 </p>
             </div>
         </div>
-        <el-input placeholder="申请消息" v-model="data.applycause" type="textarea" />
+        <el-input  placeholder="申请消息" v-model="data.applycause" type="textarea"  />
         <template #footer>
             <span class="dialog-footer">
                 <el-button type="primary" @click="applyadduser">
@@ -29,6 +29,7 @@ import { fileurl } from '../../main'
 import { applyadduserapi } from '../../API/api'
 import { ElMessage } from 'element-plus';
 // import { Userdata } from '../../App.vue'
+
 
 const emit = defineEmits(['changeHeaderDialog'])
 const data = reactive({
