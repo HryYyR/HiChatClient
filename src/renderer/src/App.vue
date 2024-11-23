@@ -22,7 +22,7 @@
 
     <!-- 主面板 -->
     <div v-show="data.islogin" class="index" :style="{ userSelect: isResizing ? 'none' : 'auto' }"
-        v-loading="data.wsconnecting">
+        v-loading.fullscreen.lock="data.loading" element-loading-text="加载中...">
         <div class="left_list" ref="resizableDiv" @mousedown="onMouseDownResizerX">
             <div class="resizer resizerX"></div>
 
@@ -275,7 +275,7 @@
         <!-- 创建群聊对话框 -->
         <CreateGroupDialog @closecreategroupdialog="closecreategroupdialog" :creategroupdata="data.creategroupdata"
             @changestep="changestep" @creategroup="creategroup"
-            @uploadcreategroupheaderSuccess="uploadcreategroupheaderSuccess" />
+            @uploadcreategroupheaderSuccess="uploadcreategroupheaderSuccess" @setLoading="setLoading" />
 
         <!-- 确定退出(解散)群聊对话框 -->
         <el-dialog v-model="data.quitgroupdata.quitGroupDialogVisible" :title="data.quitgroupdata.title" width="30%">
@@ -298,7 +298,7 @@
         <!-- 申请添加好友对话框 -->
         <ApplyAddUserDialog :userdata="data.userdata" @changeHeaderDialog="changeHeaderDialog"
             :addUserDialogVisible="data.addUserdata.addUserDialogVisible"
-            :targetuserdata="data.addUserdata.targetUserData" />
+            :targetuserdata="data.addUserdata.targetUserData" @setLoading="setLoading" />
 
         <!-- 查看用户详情对话框 -->
         <UserDetailDialog :UserDetailDialogVisible="data.userinfodata.UserDetailDialogVisible"
@@ -418,7 +418,6 @@ import {
 
 import ContextMenu from '@imengyu/vue3-context-menu'
 import { isEmpty } from 'lodash';
-import { AxiosError } from 'axios';
 
 const win: any = window  //子进程调用
 let Store = useCounter()  //全局数据存储
@@ -435,7 +434,7 @@ onMounted(() => {
     win.api && win.api.settitle()
 
     initListener()
-    
+
     if (data.logindata.autologin && data.logindata.username && data.logindata.password) {
         setTimeout(() => {
             login()
@@ -448,10 +447,10 @@ onUnmounted(() => {
 });
 
 const data = reactive({
+    loading: false,
     ws: {
         wsconn: <WebSocket | null>null,  //ws连接
     },
-    wsconnecting: true,
     wsidentify: {
         publickey: "",
         aeskey: <CryptoKey>{},
@@ -461,7 +460,7 @@ const data = reactive({
     // AckFlag: 0,
     islogin: false, //是否登录
     isrelogin: false, //是否为断线重连,默认为false，ws断开为true，重连成功为false，重连失败为false
-    loginloading: false, //是否加载中
+    loginloading: false, //登录注册页是否加载中
     loadingmessagelist: false, //加载消息列表
     loadingmsaageburial: true, //是否开启加载消息,在切换窗口时设为true
 
@@ -488,7 +487,7 @@ const data = reactive({
     logindata: { //登录信息
         username: localStorage.getItem("username") || "",
         password: localStorage.getItem("password") || "",
-        avatar:localStorage.getItem("avatar") || "",
+        avatar: localStorage.getItem("avatar") || "",
         rememberpassword: localStorage.getItem("rememberpassword") == "1" ? true : false,
         autologin: localStorage.getItem("autologin") == "1" ? true : false,
         offset: false
@@ -645,7 +644,7 @@ const send = async () => {
                 UserName: data.userdata.UserName,
                 UserAvatar: data.userdata.Avatar == "" ? `http://${fileurl}/static/icon.png` : data.userdata.Avatar,
                 UserCity: data.userdata.City,
-                UserAge: JSON.stringify(data.userdata.Age),
+                UserAge: data.userdata.Age,
                 GroupID: data.currentgroupdata.GroupInfo.ID,
                 Msg: data.input,
                 MsgType: 1,
@@ -808,11 +807,15 @@ const setcurrentfriendlist = (frienddata: Friend) => {
 }
 
 // 登录
-const login = () => {
+const login = async () => {
     data.loginloading = true
     const { username, password } = data.logindata
-    loginapi(username, password)?.then(res => {
+
+    try {
+        let res:any =await loginapi(username, password)
+
         console.log(res);
+
         // 数据处理
         if (res.data.userdata.GroupList == null) {
             res.data.userdata.GroupList = []
@@ -833,16 +836,14 @@ const login = () => {
         localStorage.setItem("token", res.data.token)
         localStorage.setItem("username", data.logindata.username)
         localStorage.setItem("avatar", data.userdata.Avatar)
-        if (localStorage.getItem("rememberpassword")=="1") {
+        if (localStorage.getItem("rememberpassword") == "1") {
             localStorage.setItem("password", data.logindata.password)
         } else {
             localStorage.removeItem("password")
         }
-
         connectws()
 
-
-    }).catch((err: AxiosError) => {
+    } catch (err:any) {
         let errinfo = "发生了未知的错误: " + err
         console.log(err);
         if (err.status && err.status >= 500) {
@@ -855,11 +856,8 @@ const login = () => {
         setTimeout(() => {
             tip("error", errinfo)
             data.loginloading = false
-
         }, 500);
-
-        return
-    })
+    }
 }
 
 // 退出登录
@@ -882,6 +880,8 @@ const loginOutAndClearInfo = () => {
     win.api && win.api.backtologin()
     setTimeout(() => {
         data.islogin = false
+        data.loginloading = false
+        data.loading = false
     }, 50);
     data.wsidentify.wsmsgindex = 0
     data.wsidentify.publickey = ""
@@ -959,6 +959,9 @@ const handleMsg = (msg: any) => {
     }
 
     const JoginGroupMsg = async (msg: MessageListitem) => {
+        if (msg.UserID == data.userdata.ID) {
+            return
+        }
         // refreshgroupnoticedata()
         let targetgroup = data.grouplist.find(group => group.GroupInfo.ID == msg.GroupID)
         if (typeof targetgroup != "undefined") {
@@ -1141,7 +1144,7 @@ const handlepublickeymsg = async (keymsg: any) => {
     keyPair.setKey(publicKey)
 
     let aeskey = await window.crypto.subtle.exportKey("raw", data.wsidentify.aeskey)
-    console.log("aeskey", aeskey);
+    // console.log("aeskey", aeskey);
 
     let aeskeybase64 = arrayToBase64(aeskey)
     let enkey = keyPair.encrypt(aeskeybase64)
@@ -1157,6 +1160,8 @@ const toregister = () => {
 
 // 注册
 const register = () => {
+    data.loginloading = true
+
     let { username, password, checkpassword, email, emailcode } = data.registerdata
 
     var usernamereg = /^[a-zA-Z0-9_]+$/;
@@ -1170,6 +1175,7 @@ const register = () => {
         /\s/.test(password)
     ) {
         tip("error", "信息有误,请检查后重试!")
+        data.loginloading = false
         return
     }
 
@@ -1177,24 +1183,26 @@ const register = () => {
         console.log(res);
         if (res.status != 200) {
             tip("error", "注册失败,请稍后再试!")
-            return
-        }
-        tip("success", "注册成功!")
-        data.logindata.offset = !data.logindata.offset
-        data.logindata.username = username
-        data.logindata.password = password
-        data.registerdata = {
-            username: "",
-            password: "",
-            checkpassword: "",
-            email: "",
-            emailcode: "",
-            sendemailbtnvisible: false,
-            sendcodebtn: "发送验证码"
+        } else {
+            tip("success", "注册成功!")
+            data.logindata.offset = !data.logindata.offset
+            data.logindata.username = username
+            data.logindata.password = password
+            data.registerdata = {
+                username: "",
+                password: "",
+                checkpassword: "",
+                email: "",
+                emailcode: "",
+                sendemailbtnvisible: false,
+                sendcodebtn: "发送验证码"
+            }
         }
     }).catch(err => {
         tip("error", err.response.data.msg)
     })
+    data.loginloading = false
+
 }
 
 // 打开录音窗口
@@ -1300,44 +1308,53 @@ const preapplyentergroup = (group: GroupInfo) => {
 
 // 申请加入群聊
 const applyentergroup = async () => {
+    data.loading = true
     console.log(data.applyjoingroupdata);
 
-    applyjoingroupapi(data.applyjoingroupdata).then(res => {
+    try {
+        let res = await applyjoingroupapi(data.applyjoingroupdata)
         console.log(res);
         tip("success", "申请成功")
+        data.addgroupdata.addgroupinput = ""
+        data.applyjoingroupdata.Msg = ""
+        data.addgroupdata.preaddGroupDialogVisible = false
+        data.addgroupdata.addGroupDialogVisible = false
+        data.addgroupdata.addgroupsearchlist = <GroupinfoList>{}
         refreshgroupnoticedata()
-    }).catch(err => {
+    } catch (err: any) {
         tip("error", err.response.data.msg)
-    })
-    data.addgroupdata.addgroupinput = ""
-    data.applyjoingroupdata.Msg = ""
-    data.addgroupdata.preaddGroupDialogVisible = false
-    data.addgroupdata.addGroupDialogVisible = false
-    data.addgroupdata.addgroupsearchlist = <GroupinfoList>{}
+    }
+    data.loading = false
+
 
 }
 
 // 创建群聊
 const creategroup = async () => {
+    data.loading = true
     const { creategroupinput, headerurl } = data.creategroupdata
-    creategroupapi(creategroupinput, headerurl).then(res => {
-        let newgrouplist = [toRef(res.data.data).value].concat(data.grouplist)
-        data.grouplist = newgrouplist
-
-        console.log(data.grouplist);
-
-        tip('success', "创建成功")
-        // refreshgrouplist()
-        data.creategroupdata = {
-            headeruploadurl: `http://${fileurl}/file/uploadfile`,
-            creategroupinput: "",
-            createGroupDialogVisible: false,
-            headerurl: "",
-            createstep: 1
+    try {
+        let res = await creategroupapi(creategroupinput, headerurl)
+        if (res.status == 200) {
+            let newgrouplist = [toRef(res.data.data).value].concat(data.grouplist)
+            data.grouplist = newgrouplist
+            tip('success', "创建成功")
+            // refreshgrouplist()
+            data.creategroupdata = {
+                headeruploadurl: `http://${fileurl}/file/uploadfile`,
+                creategroupinput: "",
+                createGroupDialogVisible: false,
+                headerurl: "",
+                createstep: 1
+            }
+        } else {
+            throw "创建失败,请稍后重试"
         }
-    }).catch(() => {
+    } catch (err) {
         tip('error', "创建失败,请稍后重试")
-    })
+    }
+    data.loading = false
+
 }
 
 // 切换创建群聊的步骤
@@ -1354,27 +1371,33 @@ const changequitgroupdialog = (item: GroupList) => {
 
 // 退出群聊
 const quitgroup = async () => {
+    data.loading = true
+
     const GroupInfo = data.quitgroupdata.targetgroupdata.GroupInfo
-    console.log(GroupInfo);
+    // console.log(GroupInfo);
 
-    exitgroupapi(GroupInfo.ID).then(() => {
-        data.quitgroupdata.quitGroupDialogVisible = false
-        data.moregroupinfo.moregroupinfodrawer = false
-        if (JSON.stringify(data.currentgroupdata) != '{}') {
-            if (data.currentgroupdata.GroupInfo.ID == GroupInfo.ID) {
-                data.currentSelectType = 0
-                data.currentgroupdata = <GroupList>{}
+    try {
+        let res = await exitgroupapi(GroupInfo.ID)
+        if (res.status == 200) {
+            data.quitgroupdata.quitGroupDialogVisible = false
+            data.moregroupinfo.moregroupinfodrawer = false
+            if (JSON.stringify(data.currentgroupdata) != '{}') {
+                if (data.currentgroupdata.GroupInfo.ID == GroupInfo.ID) {
+                    data.currentSelectType = 0
+                    data.currentgroupdata = <GroupList>{}
+                }
             }
+            data.grouplist = data.grouplist.filter(group => group.GroupInfo.ID !== GroupInfo.ID)
+            tip("success", GroupInfo.CreaterID == data.userdata.ID ? "解散成功!" : "退出成功!")
+        } else {
+            throw "操作失败"
         }
-        data.grouplist = data.grouplist.filter(group => group.GroupInfo.ID !== GroupInfo.ID)
-
-        tip("success", GroupInfo.CreaterID == data.userdata.ID ? "解散成功!" : "退出成功!")
-
-    }).catch(err => {
+    } catch (err) {
         console.log(err);
         tip("error", "操作失败")
-    })
+    }
 
+    data.loading = false
     // data.currentgroupdata = <GroupList>{
     //     GroupInfo: <GroupInfo>{},
     //     MessageList: [] as Array<MessageListitem>
@@ -1382,49 +1405,68 @@ const quitgroup = async () => {
 }
 
 // 搜索群聊
-const searchgroup = () => {
+const searchgroup = async () => {
     if (data.addgroupdata.addgroupinput.trim().length == 0) {
         tip("error", "关键词不能为空!")
+        data.loading = false
         return
     }
+    
+    data.loading = true
 
-    searchGroupapi(data.addgroupdata.addgroupinput).then((res) => {
+    try {
+        let res = await searchGroupapi(data.addgroupdata.addgroupinput)
         if (res.status != 200) {
-            tip("error", "搜索成功")
-            return
+            tip("error", "搜索失败！")
+        } else {
+            // console.log(res.data.grouplist);
+            data.addgroupdata.addgroupsearchlist = res.data.grouplist == null ? [] : res.data.grouplist
         }
-        console.log(res.data.grouplist);
-
-        data.addgroupdata.addgroupsearchlist = res.data.grouplist == null ? [] : res.data.grouplist
-
-    }).catch(() => {
+    } catch (err) {
         tip("error", "搜索失败,请稍后重试")
-    })
+    }
+
+    data.loading = false
 }
 
 // 处理添加群聊通知
-const handleapplymsg = (apply: ApplyItem, status: number) => {
-    joingroupapi(apply.ID, status).then(res => {
-        console.log(res.data);
-        tip("success", "操作成功")
-        apply.HandleStatus = status
-    }).catch(error => {
-        console.log(error);
+const handleapplymsg = async (apply: ApplyItem, status: number) => {
+    data.loading = true
+
+    try {
+        let res = await joingroupapi(apply.ID, status)
+        if (res.status == 200) {
+            tip("success", "操作成功")
+            apply.HandleStatus = status
+        } else {
+            tip("error", "操作失败,请稍后重试")
+        }
+    } catch (err) {
         tip("error", "操作失败,请稍后重试")
-    })
+    }
+    data.loading = false
+
 }
 
 // 处理添加好友通知
-const handleapplyaddusermsg = (apply: ApplyUserItem, status: number) => {
+const handleapplyaddusermsg = async (apply: ApplyUserItem, status: number) => {
+    data.loading = true
+
     apply.HandleStatus = status
-    adduserapi(apply.ID, status).then(res => {
+
+    try {
+        let res = await adduserapi(apply.ID, status)
         if (res.status = 200) {
             tip("success", "操作成功")
+        } else {
+            throw "操作失败,请稍后重试"
         }
-    }).catch(err => {
-        console.log(err);
+    } catch (err) {
+        // console.log(err);
         tip("error", "操作失败,请稍后重试")
-    })
+    }
+    data.loading = false
+
 }
 
 // 打开群聊右键菜单
@@ -1553,11 +1595,14 @@ const initListener = () => {
 
 // 发送邮箱验证码
 const sendemailCode = () => {
+    data.loginloading = true
+
     const email = data.registerdata.email
 
     var reg = /^([a-zA-Z]|[0-9])(\w|\-)+@[a-zA-Z0-9]+\.([a-zA-Z]{2,4})$/;
     if (!reg.test(email)) {
         tip("error", "邮箱格式不正确!")
+        data.loginloading = false
         return
     }
 
@@ -1568,21 +1613,23 @@ const sendemailCode = () => {
         data.registerdata.sendcodebtn = `${i}s`
         i--
     }, 1000)
-    setTimeout(() => {
-        clearInterval(downtime)
-        data.registerdata.sendcodebtn = "发送验证码"
-        data.registerdata.sendemailbtnvisible = false
-    }, 60000);
 
     emailcodeapi(email).then(res => {
         console.log(res);
         tip("success", res.data.msg)
+        setTimeout(() => {
+            clearInterval(downtime)
+            data.registerdata.sendcodebtn = "发送验证码"
+            data.registerdata.sendemailbtnvisible = false
+        }, 60000);
 
     }).catch(err => {
         tip("error", "验证码发送失败!")
         console.log(err);
 
     })
+    data.loginloading = false
+
 }
 
 //  上传群头像
@@ -1680,12 +1727,12 @@ const connectws = async () => {
 
             console.log("connect success!");
             data.isrelogin = false
-            data.wsconnecting = false
+            data.loading = false
             reconnectnum = 0
         }
 
     data.ws.wsconn.onclose = function (evt: any) {
-        data.wsconnecting = true
+        data.loading = true
         data.isrelogin = true
         data.wsidentify = {
             publickey: "string",
@@ -1700,7 +1747,7 @@ const connectws = async () => {
         tip('error', "网络连接超时,尝试重连中...")
         if (reconnectnum >= 3) {
             outlogin(true)
-            data.wsconnecting = false
+            data.loading = false
             data.loginloading = false
             data.isrelogin = false
             reconnectnum = 0
@@ -1782,25 +1829,29 @@ const closecreategroupdialog = () => {
 }
 
 // 点击群聊信息里的,群成员查看资料时触发
-const lookuserinfo = (userid: number) => {
+const lookuserinfo = async (userid: number) => {
     if (userid == data.userdata.ID) {
         data.userdetaildata.UserDetailDialogVisible = true
         return
     }
+    data.loading = true
 
-    getuserdataapi(userid).then(res => {
+    try {
+        let res = await getuserdataapi(userid)
         if (res.status != 200) {
             tip('error', "获取信息失败,请稍后重试!")
-            return
+        } else {
+            data.userinfodata.userdata = res.data.data
+            if (CurrentCheckUserIsFriend) {
+                data.userinfodata.friendinfodata = data.userdata.FriendList.filter(f => f.Id == userid)[0] || <Friend>{}
+            }
+            data.userinfodata.UserDetailDialogVisible = true
         }
-        data.userinfodata.userdata = res.data.data
-        if (CurrentCheckUserIsFriend) {
-            data.userinfodata.friendinfodata = data.userdata.FriendList.filter(f => f.Id == userid)[0] || <Friend>{}
-        }
-        data.userinfodata.UserDetailDialogVisible = true
-    }).catch(() => {
+    } catch (err) {
         tip('error', "获取信息失败,请稍后重试!")
-    })
+    }
+
+    data.loading = false
 
 }
 
@@ -1811,18 +1862,24 @@ const handlelookuserinfodialog = (visible: boolean) => {
 }
 
 // 删除好友
-const deletefriend = (targetuserid: number) => {
+const deletefriend = async (targetuserid: number) => {
     ElMessageBox.confirm("确认删除此好友吗?", "删除好友", {
         confirmButtonText: '确定',
         cancelButtonText: '取消',
-    }).then(() => {
-        deletefriendapi(targetuserid).then(res => {
+    }).then(async () => {
+        data.loading = true
+        try {
+            let res = await deletefriendapi(targetuserid)
             if (res.status = 200) {
                 tip("success", "删除成功")
+            } else {
+                throw "删除失败,请稍后再试"
             }
-        }).catch(() => {
+        } catch (err) {
             tip("error", "删除失败,请稍后再试")
-        })
+        }
+        data.loading = false
+
     })
 }
 
@@ -1840,13 +1897,20 @@ const handlesearchfriendinput = (str: string) => {
 }
 
 // 发起请求搜索好友
-const searchfriend = () => {
-    searchfriendapi(data.searchfrienddata.searchinput).then(res => {
-        data.searchfrienddata.friendlist = res.data.data
-    }).catch(err => {
-        console.log(err);
+const searchfriend = async () => {
+    data.loading = true
+    try {
+        let res = await searchfriendapi(data.searchfrienddata.searchinput)
+        if (res.status == 200) {
+            data.searchfrienddata.friendlist = res.data.data
+        } else {
+            throw "搜索失败!"
+        }
+    } catch (err) {
+        // console.log(err);
         tip('error', "搜索失败!")
-    })
+    }
+    data.loading = false
 }
 
 // 搜索好友之前
@@ -1888,20 +1952,21 @@ const ToSearchTarget = (item: MatchingItem) => {
 
 // 发起用户对用户的视频聊天请求
 const startUserToUserVideoCall = async () => {
-    startusertouservideocall(data.currentfrienddata.Id).then(res => {
+    data.loading = true
+
+    try {
+        let res = await startusertouservideocall(data.currentfrienddata.Id)
         console.log(res);
         win.api && win.api.createRemoteVideo(data.userdata.ID, "starter")
-    }).catch(err => {
+    } catch (err: any) {
         if (err.response.status == 400) {
             tip("error", "对方不在线")
-            return
         }
         if (err.response.status == 500) {
             tip("error", "服务器发生了错误")
-            return
         }
-    })
-
+    }
+    data.loading = false
 }
 
 // 切换群聊详情里,成员列表的显示
@@ -2002,6 +2067,10 @@ const onMouseUp = () => {
     document.removeEventListener('mousemove', onMouseMoveY);
     document.removeEventListener('mouseup', onMouseUp);
 };
+
+const setLoading = (bool: boolean) => {
+    data.loading = bool
+}
 
 export type GroupInfo = {
     Avatar: string

@@ -13,6 +13,13 @@ axios.defaults.baseURL = "http://127.0.0.1"
 // const apistaticurl = "http://192.168.137.1"
 // axios.defaults.baseURL = "http://192.168.137.1"
 
+
+// const defaulturl = "http://203.195.163.23"
+// const apifileurl = "http://203.195.163.23"
+// const apistaticurl = "http://203.195.163.23"
+// axios.defaults.baseURL = "http://203.195.163.23"
+
+
 // 登录
 export function loginapi(username: string, password: string) {
     const md5: Md5 = new Md5()
@@ -28,7 +35,7 @@ export function loginapi(username: string, password: string) {
             password: hash
         }
         return axios({
-            url: defaulturl + "/login",
+            url: defaulturl + "/user/login",
             method: "POST",
             data: info
         })
@@ -53,7 +60,7 @@ export function registerapi(username: string, password: string, email: string, e
     }
     
     return axios({
-        url: apistaticurl + "/register",
+        url: apistaticurl + "/user/register",
         method: "POST",
         data: registerinfo
     })
@@ -66,7 +73,7 @@ export function emailcodeapi(email: string) {
     }
 
     return axios({
-        url: apistaticurl + "/emailcode",
+        url: apistaticurl + "/user/emailcode",
         method: "POST",
         data: msg
     })

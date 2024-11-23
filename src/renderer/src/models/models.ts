@@ -84,10 +84,11 @@ export type MessageListitem = {
     UserName: string
     UserUUID?: string 
     UserAvatar: string
-    UserAge:string
+    UserAge:number
     UserCity:string
 }
 
+// 好友信息
 export type Friend = {
     Age: string
     Avatar: string
@@ -103,6 +104,7 @@ export type Friend = {
     UserName: string
 }
 
+// 用户消息体
 export type FriendMessageListitem = {
     ID?:number
     UserID: number
@@ -115,7 +117,7 @@ export type FriendMessageListitem = {
     MsgType: number
     MsgStatus?:boolean
     IsReply: boolean
-    ReplyUserID: number
+    ReplyMsgID: number
     Context: any
     CreatedAt: Date
 }

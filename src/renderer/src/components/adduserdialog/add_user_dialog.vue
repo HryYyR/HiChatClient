@@ -1,5 +1,5 @@
 <template>
-    <el-dialog  :before-close="beforeCloseAddUserEvent" v-model="data.addUserDialogVisible" title="添加好友" width="40%">
+    <el-dialog :before-close="beforeCloseAddUserEvent" v-model="data.addUserDialogVisible" title="添加好友" width="40%">
         <div class="add_user_dialog_container">
             <div>
                 <img :src="`http://${fileurl}/${targetuserdata.Avatar}`" alt="">
@@ -12,7 +12,7 @@
                 </p>
             </div>
         </div>
-        <el-input  placeholder="申请消息" v-model="data.applycause" type="textarea"  />
+        <el-input placeholder="申请消息" v-model="data.applycause" type="textarea" />
         <template #footer>
             <span class="dialog-footer">
                 <el-button type="primary" @click="applyadduser">
@@ -31,7 +31,7 @@ import { ElMessage } from 'element-plus';
 // import { Userdata } from '../../App.vue'
 
 
-const emit = defineEmits(['changeHeaderDialog'])
+const emit = defineEmits(['changeHeaderDialog', 'setLoading'])
 const data = reactive({
     applycause: "",
     addUserDialogVisible: false
@@ -56,23 +56,29 @@ watch(props, (_, nv) => {
     data.addUserDialogVisible = nv.addUserDialogVisible
 }, { deep: true })
 const beforeCloseAddUserEvent = () => {
-    data.applycause=""
+    data.applycause = ""
     emit('changeHeaderDialog', props.targetuserdata)
 }
 
-const applyadduser = () => {
+const applyadduser = async () => {
+    emit('setLoading', true)
     let PreUserId = props.targetuserdata.ID
     let PreUserName = props.targetuserdata.UserName
     let BackUserId = props.userdata.ID
     let BackUserName = props.userdata.UserName
     console.log(PreUserId, PreUserName, BackUserId, BackUserName);
-    applyadduserapi(PreUserId, PreUserName, BackUserId, BackUserName,data.applycause).then(res => {
-        console.log(res.data);
-        tip('success', res.data.msg)
-    }).catch(() => {
+    try {
+        let res = await applyadduserapi(PreUserId, PreUserName, BackUserId, BackUserName, data.applycause)
+        if (res.status == 200) {
+            tip('success', res.data.msg)
+        }else{
+            throw "申请失败!"
+        }
+    } catch (err) {
         tip('error', "申请失败!")
-    })
+    }
     emit('changeHeaderDialog', props.targetuserdata)
+    emit('setLoading',false)
 }// 提示
 function tip(type: any, message: string) {
     ElMessage({

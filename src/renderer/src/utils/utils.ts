@@ -86,7 +86,7 @@ export function SendFriendResourceMsg(
         Msg: msg,
         MsgType: MsgType,
         IsReply: false,
-        ReplyUserID: 0,
+        ReplyMsgID: 0,
         Context: [],
         CreatedAt: new Date()
     }
