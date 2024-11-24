@@ -1,7 +1,7 @@
 <template>
     <!-- 消息通知对话框 -->
     <el-dialog  style="background-color: rgb(229,229,229);" v-model="props.applymsgdata.applyMsgDialogVisible" title="消息通知"
-        width="60%">
+        width="60%"  >
 
         <el-menu class="menu_group" default-active="0" :unique-opened="true" background-color="#e5e5e5" mode="horizontal" :ellipsis="false"
             @select="handleSelect">

@@ -129,7 +129,7 @@ export function RefreshApplyAddFriendListapi(id: number) {
 
 
 // 修改用户信息
-export function edituserdataapi(age: number, city: string, introduce: string) {
+export function edituserdataapi(age: number, city: string, introduce: string,Avatar:string) {
     let aage: any
     if (typeof age === "number") {
         aage = JSON.stringify(age)
@@ -139,7 +139,8 @@ export function edituserdataapi(age: number, city: string, introduce: string) {
     let msg = {
         age: aage,
         city: city,
-        introduce: introduce
+        introduce: introduce,
+        avatar:Avatar
     }
     return axios({
         url: apistaticurl + "/user/edituserdata",

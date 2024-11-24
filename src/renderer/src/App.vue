@@ -27,7 +27,7 @@
             <div class="resizer resizerX"></div>
 
             <UserInfoVue @edituserdata="edituserdata" @userdetaildialoghandleClose="userdetaildialoghandleClose"
-                :UserDetailDialogVisible="data.userdetaildata.UserDetailDialogVisible" :userdata="data.userdata" />
+                :UserDetailDialogVisible="data.userdetaildata.UserDetailDialogVisible" :userdata="data.userdata"  />
 
             <!-- 群工具 -->
             <FuncBarVue :searchinput="data.searchdata.searchinput"
@@ -99,8 +99,8 @@
                 <div @click="outlogin(false)" class="outlogin">
                     <QuitIconVue />
                 </div>
-                <div class="Ai_assistant" :username="data.userdata.UserName" :userheader="data.userdata.Avatar"
-                    @click="changeAiAssistantDialogVisible">AI</div>
+                <!-- <div class="Ai_assistant" :username="data.userdata.UserName" :userheader="data.userdata.Avatar"
+                    @click="changeAiAssistantDialogVisible">AI</div> -->
             </div>
         </div>
 
@@ -164,7 +164,7 @@
             <!-- 群聊详细信息 -->
             <el-drawer v-model="data.moregroupinfo.moregroupinfodrawer"
                 :title="data.currentgroupdata.GroupInfo ? data.currentgroupdata.GroupInfo.GroupName : ''"
-                direction="rtl" size="300px" append-to-body>
+                direction="rtl" size="30%" append-to-body>
                 <MoreGroupInfoDrawerDetail :groupinfo="data.currentgroupdata"
                     :memberlistdetaildarwer="data.moregroupinfo.memberlistdetaildarwer" :userid="data.userdata.ID"
                     :memberlistdata="data.moregroupinfo.memberlistdata" @changequitgroupdialog="changequitgroupdialog"
@@ -812,7 +812,7 @@ const login = async () => {
     const { username, password } = data.logindata
 
     try {
-        let res:any =await loginapi(username, password)
+        let res: any = await loginapi(username, password)
 
         console.log(res);
 
@@ -843,7 +843,7 @@ const login = async () => {
         }
         connectws()
 
-    } catch (err:any) {
+    } catch (err: any) {
         let errinfo = "发生了未知的错误: " + err
         console.log(err);
         if (err.status && err.status >= 500) {
@@ -1411,7 +1411,7 @@ const searchgroup = async () => {
         data.loading = false
         return
     }
-    
+
     data.loading = true
 
     try {
@@ -1624,7 +1624,12 @@ const sendemailCode = () => {
         }, 60000);
 
     }).catch(err => {
-        tip("error", "验证码发送失败!")
+        if (err.response.status==400) {
+            tip("error", err.response.data.msg)
+        }else  {
+            tip("error", "验证码发送失败!")
+        }
+        
         console.log(err);
 
     })
@@ -1632,17 +1637,6 @@ const sendemailCode = () => {
 
 }
 
-//  上传群头像
-const uploadcreategroupheaderSuccess: UploadProps['onSuccess'] = (response) => {
-    console.log(response);
-
-    if (response.code == 1) {
-        tip("error", response.msg)
-        return
-    }
-    tip("success", response.msg)
-    data.creategroupdata.headerurl = response.fileurl
-}
 
 // 滚动到最新
 const scrolltonew = (delay: number = 0, smooth: boolean = false) => {
@@ -1677,6 +1671,18 @@ const clearcurrentfriendmsg = async () => {
     let message = SendFriendResourceMsg("", 1401, data.userdata, data.currentfrienddata)
     let encryptedData = await encryptAes(data.wsidentify.aeskey, message)
     data.ws?.wsconn?.send(encryptedData)
+}
+
+//  上传群头像
+const uploadcreategroupheaderSuccess: UploadProps['onSuccess'] = (response) => {
+    console.log(response);
+
+    if (response.code == 1) {
+        tip("error", response.msg)
+        return
+    }
+    tip("success", response.msg)
+    data.creategroupdata.headerurl = response.fileurl
 }
 
 // 上传图片之前
@@ -1785,10 +1791,12 @@ const userdetaildialoghandleClose = () => {
 }
 
 // 修改用户信息
-const edituserdata = (age: number, city: string, introduce: string) => {
+const edituserdata = (age: number, city: string, introduce: string,Avatar:string) => {
     data.userdata.Age = age
     data.userdata.City = city
     data.userdata.Introduce = introduce
+    data.userdata.Avatar=Avatar
+    localStorage.setItem("avatar",Avatar)
 }
 
 // 打开添加用户对话框
@@ -1898,10 +1906,17 @@ const handlesearchfriendinput = (str: string) => {
 
 // 发起请求搜索好友
 const searchfriend = async () => {
+    if (data.searchfrienddata.searchinput.trim().length == 0) {
+        tip("warning", "内容不能为空！")
+        return
+    }
     data.loading = true
     try {
-        let res = await searchfriendapi(data.searchfrienddata.searchinput)
+        let res = await searchfriendapi(data.searchfrienddata.searchinput.trim())
         if (res.status == 200) {
+            if (res.data.data.length == 0) {
+                tip("info", "没有匹配的用户！")
+            }
             data.searchfrienddata.friendlist = res.data.data
         } else {
             throw "搜索失败!"
@@ -1914,10 +1929,11 @@ const searchfriend = async () => {
 }
 
 // 搜索好友之前
-const preapplyaddfriend = (item: Friend) => {
-    data.searchfrienddata.targetfrienddata = item
-    data.addUserdata.targetUserData = item
-    data.addUserdata.addUserDialogVisible = true
+const preapplyaddfriend = (item: Userdata) => {
+    lookuserinfo(item.ID)
+    // data.searchfrienddata.targetfrienddata = item
+    // data.addUserdata.targetUserData = item
+    // data.addUserdata.addUserDialogVisible = true
 }
 
 // 把图片地址转为本地地址

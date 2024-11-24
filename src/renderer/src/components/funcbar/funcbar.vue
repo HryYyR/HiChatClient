@@ -1,6 +1,6 @@
 <template>
     <div class="group_tools">
-        <el-input size="large" v-model="data.searchinput" placeholder="搜索" clearable></el-input>
+        <el-input size="default" v-model="data.searchinput" placeholder="搜索" clearable></el-input>
         <el-dropdown trigger="click" v-show="props.searchinput.trim().length == 0">
             <el-icon class="open_addgroup_dialog_btn">
                 <Plus />

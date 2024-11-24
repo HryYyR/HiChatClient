@@ -8,21 +8,37 @@
             <p class="userinfo_name">{{ props.userdata.UserName }}</p>
         </div>
 
-        <el-dialog :modal="false" v-model="data.UserDetailDialogVisible" title="个人信息" width="50%"
+        <el-drawer size="100%" v-model="data.UserDetailDialogVisible" title="个人信息" direction="ltr"
             :before-close="userdetaildialoghandleClose">
 
-            <p><el-input v-model="props.userdata.ID" size="default" disabled>
-                    <template #prepend>
-                        ID:
-                    </template>
-                </el-input>
-            </p>
-            <p><el-input v-model="props.userdata.NikeName" size="default" disabled>
-                    <template #prepend>
-                        昵称:
-                    </template>
-                </el-input>
-            </p>
+            <div class="userinfo_header">
+                <div>
+                    <p class="userinfo_Avatar">
+                        <el-upload class="avatar-uploader" :action="`http://${fileurl}/file/uploadfile`"
+                            :show-file-list="false" :before-upload="beforeupload" :on-success="uploadSuccess">
+                            <img :src="`http://${fileurl}/${props.userdata.Avatar}`" alt="">
+
+                        </el-upload>
+                    </p>
+                </div>
+                <div class="userinfo_baseinfo">
+                    <p><el-input v-model="props.userdata.ID" size="large" disabled>
+                            <template #prepend>
+                                ID:
+                            </template>
+                        </el-input>
+                    </p>
+                    <p><el-input v-model="props.userdata.NikeName" size="large" disabled>
+                            <template #prepend>
+                                昵称:
+                            </template>
+                        </el-input>
+                    </p>
+                </div>
+            </div>
+
+
+
 
             <p><el-input v-model="props.userdata.Email" size="default" disabled>
                     <template #prepend>
@@ -45,13 +61,13 @@
                 </el-input>
             </p>
             <p><el-input v-model="data.introduce" size="default" @change="">
-                <template #prepend>
-                    个人简介:
-                </template>
+                    <template #prepend>
+                        个人简介:
+                    </template>
 
-            </el-input>
-        </p>
-            <p><el-input v-model="props.userdata.CreatedTime" size="default" disabled>
+                </el-input>
+            </p>
+            <!-- <p><el-input v-model="props.userdata.CreatedTime" size="default" disabled>
                     <template #prepend>
                         注册时间:
                     </template>
@@ -64,7 +80,7 @@
                     </template>
 
                 </el-input>
-            </p>
+            </p> -->
             <template #footer>
                 <span class="dialog-footer">
                     <el-button type="primary" @click="edituserdata">
@@ -72,17 +88,17 @@
                     </el-button>
                 </span>
             </template>
-        </el-dialog>
+        </el-drawer>
     </div>
 </template>
 
 <script setup lang="ts">
 import { PropType, reactive } from 'vue';
-import {  fileurl } from '../../main'
+import { fileurl } from '../../main'
 import { edituserdataapi } from '../../API/api'
-import { ElMessage } from 'element-plus';
 import { Userdata } from '../../models/models';
-let emit = defineEmits(['userdetaildialoghandleClose','edituserdata'])
+import { tip } from '../../utils/utils'
+let emit = defineEmits(['userdetaildialoghandleClose', 'edituserdata'])
 let props = defineProps({
     userdata: {
         type: Object as PropType<Userdata>,
@@ -99,7 +115,8 @@ const data = reactive({
     UserDetailDialogVisible: false,
     age: 0,
     city: "",
-    introduce:""
+    introduce: "",
+    Avatar: ""
 })
 const userdetaildialoghandleClose = () => {
     emit('userdetaildialoghandleClose')
@@ -111,25 +128,36 @@ const userdetaildialoghandleClose = () => {
 
 const edituserdata = () => {
     console.log(data.city, data.age);
-    if(data.age < 1 || data.age >=200  ||  data.city.length == 0 || data.city.length> 100 || data.introduce.length ==0  || data.introduce.length >200 ){
-        tip('error',"信息不能为空或者超出长度限制,请检查后重试!")
+    if (data.age < 1 || data.age >= 200 || data.city.length == 0 || data.city.length > 100 || data.introduce.length == 0 || data.introduce.length > 200) {
+        tip('error', "信息不能为空或者超出长度限制,请检查后重试!")
         return
     }
-    edituserdataapi(data.age, data.city,data.introduce).then(res => {
+    edituserdataapi(data.age, data.city, data.introduce, data.Avatar).then(res => {
         tip('success', res.data.msg)
-        emit('edituserdata',data.age,data.city,data.introduce)
+        emit('edituserdata', data.age, data.city, data.introduce, data.Avatar)
     }).catch((err) => {
         tip('error', err.response.data.msg)
     })
 }
 
 
-// 提示
-function tip(type: any, message: string) {
-    ElMessage({
-        "type": type,
-        "message": message
-    })
+
+const uploadSuccess = (e) => {
+    if (e.code == 0) {
+        data.Avatar = e.fileurl
+        edituserdata()
+    } else {
+        tip("error", "上传头像失败！")
+    }
+}
+
+const beforeupload = (e) => {
+    console.log(e);
+    if (e.size > 5 * 1024 * 1014) {
+        tip("warning", "头像大小不能超过5M")
+        return false
+    }
+    return true
 }
 
 </script>

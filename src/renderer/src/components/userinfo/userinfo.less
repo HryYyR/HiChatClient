@@ -33,10 +33,32 @@
             overflow: hidden;
             text-overflow: ellipsis;
             user-select:text;
-            
         }
+  
 
     }
+
+    .userinfo_header{
+        display: flex;
+        .userinfo_Avatar{
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-right: 10px;
+            img{
+                border-radius: 5px;
+                width: 100px;
+                height: 100px;
+    
+            }
+        }
+        .userinfo_baseinfo{
+            p{
+                margin: 0 0 20px 0;
+            }
+        }
+    }
+
 
     .userinfo_email {
         position: relative;
