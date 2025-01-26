@@ -32,7 +32,9 @@ export function loginapi(username: string, password: string) {
         const hash = CryptoJS.HmacSHA256(password, encryptionusername).toString()
         let info = {
             username: username,
-            password: hash
+            password: hash,
+            useragent:navigator.userAgent,
+            device:1
         }
         return axios({
             url: defaulturl + "/user/login",
