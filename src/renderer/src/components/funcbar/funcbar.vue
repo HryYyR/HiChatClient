@@ -7,18 +7,18 @@
             </el-icon>
             <template #dropdown>
                 <el-dropdown-menu>
-                    <el-dropdown-item>
-                        <div @click="emit('handlesearchfrienddialog')">
+                    <el-dropdown-item @click="emit('handlesearchfrienddialog')">
+                        <div >
                             添加好友
                         </div>
                     </el-dropdown-item>
-                    <el-dropdown-item>
-                        <div @click="emit('changeaddGroupDialogVisible')">
+                    <el-dropdown-item @click="emit('changeaddGroupDialogVisible')">
+                        <div >
                             添加群聊
                         </div>
                     </el-dropdown-item>
-                    <el-dropdown-item>
-                        <div @click="emit('changecreateGroupDialogVisible')">
+                    <el-dropdown-item @click="emit('changecreateGroupDialogVisible')">
+                        <div >
                             创建群聊
                         </div>
                     </el-dropdown-item>

@@ -124,6 +124,7 @@ const userdetaildialoghandleClose = () => {
     data.city = props.userdata.City
     data.age = props.userdata.Age
     data.introduce = props.userdata.Introduce
+    data.Avatar = props.userdata.Avatar
 }
 
 const edituserdata = () => {

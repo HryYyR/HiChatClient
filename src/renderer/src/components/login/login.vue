@@ -25,7 +25,7 @@
 
 <script setup lang="ts">
 import { reactive, watch } from 'vue'
-import { fileurl } from '../../main'
+import { fileurl } from "@renderer/main"
 const emit = defineEmits(['login'])
 let props = defineProps({
     logindata: {
@@ -50,7 +50,6 @@ watch(data, (_, newvalue) => {
     }else{
         localStorage.setItem("autologin", newvalue.autologin ? "1" : "0")
     }
-
 })
 
 
