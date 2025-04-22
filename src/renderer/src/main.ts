@@ -14,10 +14,15 @@ import '@imengyu/vue3-context-menu/lib/vue3-context-menu.css'
 import ContextMenu from '@imengyu/vue3-context-menu'
 
 
-export const wsurl = "127.0.0.1"
-export const fileurl = '127.0.0.1'
-export const staticurl = "127.0.0.1"
-axios.defaults.baseURL = "http://127.0.0.1"
+// export const wsurl = "127.0.0.1"
+// export const fileurl = '127.0.0.1'
+// export const staticurl = "127.0.0.1"
+// axios.defaults.baseURL = "http://127.0.0.1"
+
+export const wsurl = "10.235.102.151"
+export const fileurl = '10.235.102.151'
+export const staticurl = "10.235.102.151"
+axios.defaults.baseURL = "http://10.235.102.151"
 
 // export const wsurl = "192.168.137.1"
 // export const fileurl = '192.168.137.1'

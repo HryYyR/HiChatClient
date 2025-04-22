@@ -50,9 +50,9 @@ export function SendGroupResourceMsg(
     MsgType: number,
     userdata: Userdata,
     groupid: number,
-): string {
+): any {
     let aage = JSON.stringify(userdata.Age)
-    let data = {
+    let data:any = {
         UserID: userdata.ID,
         UserName: userdata.UserName,
         UserAvatar: userdata.Avatar == "" ? `http://${fileurl}/static/icon.png` : userdata.Avatar,
@@ -66,8 +66,7 @@ export function SendGroupResourceMsg(
         Context: [],
         CreatedAt: new Date()
     }
-    let strdata = JSON.stringify(data)
-    return strdata
+    return data
 }
 
 export function SendFriendResourceMsg(
@@ -75,7 +74,7 @@ export function SendFriendResourceMsg(
     MsgType: number,
     userdata: Userdata,
     currentfrienddata: Friend
-): string {
+): FriendMessageListitem {
     let data: FriendMessageListitem = {
         UserID: userdata.ID,
         UserName: userdata.UserName,
@@ -90,7 +89,7 @@ export function SendFriendResourceMsg(
         Context: [],
         CreatedAt: new Date()
     }
-    return JSON.stringify(data)
+    return data
 }
 
 export type MatchingItem = {

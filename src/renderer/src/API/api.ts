@@ -3,10 +3,15 @@ import { Md5 } from 'ts-md5';
 import CryptoJS  from 'crypto-js'
 import { tip } from './../utils/utils';
 
-const defaulturl = "http://127.0.0.1"
-const apifileurl = "http://127.0.0.1"
-const apistaticurl = "http://127.0.0.1"
-axios.defaults.baseURL = "http://127.0.0.1"
+// const defaulturl = "http://127.0.0.1"
+// const apifileurl = "http://127.0.0.1"
+// const apistaticurl = "http://127.0.0.1"
+// axios.defaults.baseURL = "http://127.0.0.1"
+
+const defaulturl = "http://10.235.102.151"
+const apifileurl = "http://10.235.102.151"
+const apistaticurl = "http://10.235.102.151"
+axios.defaults.baseURL = "http://10.235.102.151"
 
 // const defaulturl = "http://192.168.137.1"
 // const apifileurl = "http://192.168.137.1"

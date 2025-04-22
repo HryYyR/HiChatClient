@@ -1,7 +1,7 @@
 {
   "name": "HiChat-Windows",
   "version": "1.0.0",
-  "description": "HiChat即使通讯",
+  "description": "HiChat",
   "main": "./out/main/index.js",
   "author": "Hyyyh",
   "homepage": "http://203.195.163.23",

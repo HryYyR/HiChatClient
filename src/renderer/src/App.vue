@@ -27,7 +27,7 @@
             <div class="resizer resizerX"></div>
 
             <UserInfoVue @edituserdata="edituserdata" @userdetaildialoghandleClose="userdetaildialoghandleClose"
-                :UserDetailDialogVisible="data.userdetaildata.UserDetailDialogVisible" :userdata="data.userdata"  />
+                :UserDetailDialogVisible="data.userdetaildata.UserDetailDialogVisible" :userdata="data.userdata" />
 
             <!-- 群工具 -->
             <FuncBarVue :searchinput="data.searchdata.searchinput"
@@ -236,7 +236,7 @@
                     </el-icon>
                     <p>按住空格开始录音，松开发送录音</p>
                 </div>
-                <div @click="send" class="sendbtn" :style="{ color: data.input ? 'white' : 'rgba(255,255,255,0.4)' }"
+                <div @click="messageBoxSend" class="sendbtn" :style="{ color: data.input ? 'white' : 'rgba(255,255,255,0.4)' }"
                     v-show="!data.soundrecorddata.visible">
                     发送
                 </div>
@@ -418,6 +418,10 @@ import {
 
 import ContextMenu from '@imengyu/vue3-context-menu'
 import { isEmpty } from 'lodash';
+import {
+    MSG_TYPE_GROUP_MESSAGE,
+    MSG_TYPE_FRIEND_MESSAGE
+} from './const/index'
 
 const win: any = window  //子进程调用
 let Store = useCounter()  //全局数据存储
@@ -626,9 +630,19 @@ const closetest = () => {
     clearInterval(inn)
 }
  */
+// 发送指定类型的标准消息
+const SendMessage  = async (msgdata:any,type:number) =>{
+    let msg = {
+        type:type,
+        data:msgdata
+    }
+    let msgstr = JSON.stringify(msg)
+    const encryptedData = await encryptAes(data.wsidentify.aeskey, msgstr)
+    data.ws?.wsconn?.send(encryptedData)
+}
 
 // 发送消息
-const send = async () => {
+const messageBoxSend = async () => {
     data.displayemojilist = false
 
     if (data.input.replace(/ /g, "").length == 0) return
@@ -637,8 +651,10 @@ const send = async () => {
         return
     }
     let msgstr
+    let msgtype = 0
     switch (data.currentSelectType) {
         case 1:
+            msgtype = 1
             let message: MessageListitem = {
                 UserID: data.userdata.ID,
                 UserName: data.userdata.UserName,
@@ -653,7 +669,7 @@ const send = async () => {
                 Context: [],
                 CreatedAt: new Date().toISOString()
             }
-            msgstr = JSON.stringify(message)
+            msgstr = message
             scrolltonew(200, true)
             data.grouplist.forEach((m, index) => {
                 if (m.GroupInfo.ID == message.GroupID) {
@@ -669,13 +685,13 @@ const send = async () => {
             })
             break;
         case 2:
+            msgtype = 2
             msgstr = SendFriendResourceMsg(data.input, 1001, data.userdata, data.currentfrienddata)
             break
     }
     // console.log("encryptedData",encryptedData);
     if (!isEmpty(msgstr)) {
-        const encryptedData = await encryptAes(data.wsidentify.aeskey, msgstr)
-        data.ws?.wsconn?.send(encryptedData)
+        SendMessage(msgstr,msgtype)
     }
     data.input = ""
 }
@@ -831,8 +847,12 @@ const login = async () => {
             return group
         })
 
-        // 数据保存
         Store.token = res.data.token
+        Store.userdata = res.data.userdata
+        console.log(Store.userdata);
+        
+
+        // 数据保存
         localStorage.setItem("token", res.data.token)
         localStorage.setItem("username", data.logindata.username)
         localStorage.setItem("avatar", data.userdata.Avatar)
@@ -1536,7 +1556,7 @@ const initListener = () => {
                 return
             } else {
                 if (!data.aiAssistantDialogData.aiAssistantDialogVisible) {
-                    send()
+                    messageBoxSend()
                 }
             }
 
@@ -1559,14 +1579,13 @@ const initListener = () => {
                         let formData = new FormData();
                         formData.append('file', file);
                         uploadresourceapi(formData).then(async res => {
-                            let msg = ""
+                            let msg:any
                             if (data.currentSelectType == 1) {
                                 msg = SendGroupResourceMsg(res.data.fileurl, 3, data.userdata, data.currentgroupdata.GroupInfo.ID)
                             } else {
                                 msg = SendFriendResourceMsg(res.data.fileurl, 1003, data.userdata, data.currentfrienddata)
                             }
-                            let encryptedData = await encryptAes(data.wsidentify.aeskey, msg)
-                            data.ws?.wsconn?.send(encryptedData)
+                            SendMessage(msg,MSG_TYPE_GROUP_MESSAGE)
                             scrolltonew(500, true)
                         }).catch(err => {
                             tip('error', err.response.data.msg)
@@ -1624,12 +1643,12 @@ const sendemailCode = () => {
         }, 60000);
 
     }).catch(err => {
-        if (err.response.status==400) {
+        if (err.response.status == 400) {
             tip("error", err.response.data.msg)
-        }else  {
+        } else {
             tip("error", "验证码发送失败!")
         }
-        
+
         console.log(err);
 
     })
@@ -1655,22 +1674,14 @@ const scrolltonew = (delay: number = 0, smooth: boolean = false) => {
 
 // 清除当前群聊消息
 const clearcurrentgroupmsg = async () => {
-    let message = {
-        UserID: data.userdata.ID,
-        UserName: data.userdata.UserName,
-        GroupID: data.currentgroupdata.GroupInfo.ID,
-        MsgType: 401,
-        CreatedAt: new Date()
-    }
-    let encryptedData = await encryptAes(data.wsidentify.aeskey, JSON.stringify(message))
-    data.ws?.wsconn?.send(encryptedData)
+    let msg = SendGroupResourceMsg("",401,data.userdata,data.currentgroupdata.GroupInfo.ID)
+    SendMessage(msg,MSG_TYPE_GROUP_MESSAGE)
 }
 
 // 清除当前好友消息
 const clearcurrentfriendmsg = async () => {
     let message = SendFriendResourceMsg("", 1401, data.userdata, data.currentfrienddata)
-    let encryptedData = await encryptAes(data.wsidentify.aeskey, message)
-    data.ws?.wsconn?.send(encryptedData)
+    SendMessage(message,MSG_TYPE_FRIEND_MESSAGE)
 }
 
 //  上传群头像
@@ -1694,13 +1705,15 @@ const onSuccessUploadImg = async (response: any, uploadFile: any) => {
     console.log(response, uploadFile);
     uploadimg.value.clearFiles(["success"])
     let msg
+    let msgtype
     if (data.currentSelectType == 1) {
+        msgtype= MSG_TYPE_GROUP_MESSAGE
         msg = SendGroupResourceMsg(uploadFile.response.fileurl, 2, data.userdata, data.currentgroupdata.GroupInfo.ID)
     } else if (data.currentSelectType == 2) {
+        msgtype=MSG_TYPE_FRIEND_MESSAGE
         msg = SendFriendResourceMsg(uploadFile.response.fileurl, 1002, data.userdata, data.currentfrienddata)
     }
-    let encryptedData = await encryptAes(data.wsidentify.aeskey, msg)
-    data.ws?.wsconn?.send(encryptedData)
+    SendMessage(msg,msgtype)
     scrolltonew(500, true)
 
 }
@@ -1791,12 +1804,12 @@ const userdetaildialoghandleClose = () => {
 }
 
 // 修改用户信息
-const edituserdata = (age: number, city: string, introduce: string,Avatar:string) => {
+const edituserdata = (age: number, city: string, introduce: string, Avatar: string) => {
     data.userdata.Age = age
     data.userdata.City = city
     data.userdata.Introduce = introduce
-    data.userdata.Avatar=Avatar
-    localStorage.setItem("avatar",Avatar)
+    data.userdata.Avatar = Avatar
+    localStorage.setItem("avatar", Avatar)
 }
 
 // 打开添加用户对话框

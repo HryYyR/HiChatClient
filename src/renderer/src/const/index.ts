@@ -1,0 +1,2 @@
+export const MSG_TYPE_GROUP_MESSAGE =1;
+export const MSG_TYPE_FRIEND_MESSAGE =2;
